@@ -8,35 +8,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <vector>
+#include <assert.h>
 using namespace std;
 
 ifstream file;
-/*
-char peekFile() {
-  return file.peek();
-}
 
-void closeFile() {
-  file.close();
-}
-int parseInt(){
-  int pos = 0;
-  char* num = new char[4];
-  while (isdigit(file.peek()) || file.peek() == '-') {
-    num[pos++] = file.get();
-  }
-  num[pos] = '\0';
-  return atoi(num);
-}
 
-void stepOverDelimiters(){
-  while (isblank(file.peek()) || file.peek() == '\n') {
-    file.get();
-  }
-}
-*/
-
+enum MODE { PLACE = 1, REMOVE};
+enum PLAYER { RED = 1, BLUE};
+enum LIMIT { MAX = 1000000, MIN = -1000000};
 
 struct state {
   unsigned int rod:31;
@@ -53,42 +34,13 @@ struct state {
 
 static state board;
 
-int isEmpty(state test, int i) {
-  return test.rod & (1u << i);
+bool isEmpty(state test, int i) {
+  return test.rod & (1u << i) > 0;
 }
 
 void getState(const char* fileName) {
   bzero(&board, sizeof(board));
   file.open(fileName);
-  /*
-  for (int i = 0; i < 31; i++) {
-    parseInt();
-    stepOverDelimiters();
-    unsigned int weight = parseInt();
-    stepOverDelimiters();
-    unsigned int player = parseInt();
-    stepOverDelimiters();
-    if (weight) {
-      board.rod |= 1u << i;
-      if (player == 1) {
-        if (i < 16) {
-          board.Rlow |= weight << (i*4);
-        }
-        else {
-          board.Rhigh |= weight << ((i - 16)*4);
-        }
-      }
-      else {
-        if (i < 16) {
-          board.Blow |= weight << (i*4);
-        }
-        else {
-          board.Bhigh |= weight << ((i - 16)*4);
-        }
-      }
-    }
-  }
-  */
   unsigned long  weight;
   int pos, player = 0;
   int rf = 1;
@@ -97,12 +49,12 @@ void getState(const char* fileName) {
   while ( file >> pos >> weight >> player ) {
     pos += 15;
     if ( weight) {
-      if (player == 1 && rf == 1) {
+      if (player == RED && rf == 1) {
         board.Rfirst = pos;
         rf = 0;
       }
       board.rod |= 1u << pos;
-      if( player == 1) {
+      if( player == RED) {
         if (pos < 16) {
           board.Rlow |= weight << (pos * 4) ;
         }else {
@@ -110,7 +62,7 @@ void getState(const char* fileName) {
         }
         board.Rremaining &= ~(1u << weight);
         board.Rlast = pos;
-      }else if (player == 2){
+      }else if (player == BLUE){
         if( pos < 16) {
           board.Blow |= weight << ( pos * 4);
         }else {
@@ -157,6 +109,155 @@ int isRed(state test, int i) {
   return 0;
 }
 
+
+int getLeftNumber(state test, int player) {
+  int number = 0;
+  for(int i = 0; i < 12; i ++ ) {
+    if( isEmpty(test, i) == 0 ) {
+      if( player == RED && isRed(test, i) ){
+        number ++;
+      }
+      else if( player == BLUE && isBlue(test, i))
+        number ++;
+    }
+  }
+  return number;
+}
+
+
+int getMiddleNumber(state  test, int player) {
+  int number = 0;
+  for(int i = 12; i < 15; i ++ ) {
+    if( isEmpty(test, i) == 0 ) {
+      if( player == RED && isRed(test, i) ){
+        number ++;
+      }
+      else if( player == BLUE && isBlue(test, i))
+        number ++;
+    }
+  }
+  return number;
+}
+
+
+int getRightNumber(state test, int player) {
+  int number = 0;
+  for(int i = 15; i < 31; i ++ ) {
+    if( isEmpty(test, i) == 0 ) {
+      if( player == RED && isRed(test, i) ){
+        number ++;
+      }
+      else if( player == BLUE && isBlue(test, i))
+        number ++;
+    }
+  }
+  return number;
+}
+
+std::pair<int, int> diff_state(state s1, state s2) {
+  /* s2 has to hold more weight than s1 */
+  pair<int, int> move;
+  for(int i = 0; i < 31; i ++ ) {
+    if( isEmpty(s1, i) != isEmpty(s2, i)) {
+      move.first = i;
+      break;
+    }
+  }
+
+  move.second = getWeight(s2, move.first);
+}
+
+std::vector<int> getPosAvail(state test) {
+  std::vector<int> pos;
+  for(int i = 0; i < 31; i ++ ) {
+    if( isEmpty(test, i)) 
+      pos.push_back(i);
+  }
+  return pos;
+}
+std::vector<int> getBlockAvail(state test, int player) {
+  std::vector<int> blocks;
+  unsigned short r = test.Rremaining;
+  if(player == BLUE)
+    r = test.Bremaining;
+
+  for(int i = 1;i <= 12; i++ ) {
+    if ( r & (1u << i) )
+      blocks.push_back(i);
+  }
+
+  return blocks;
+}
+
+
+
+void place(state * test, int player, int i, int weight) {
+    test->rod |= 1u << i;
+    if( player == RED) {
+      if(i < 16)  test->Rlow |= weight << (i * 4);
+      else test->Rhigh |= weight << ((i -16) * 4);
+    }else {
+      if(i < 16) test->Blow |= weight << (i * 4);
+      else test->Bhigh |= weight << ((i -16) * 4);
+    }
+}
+
+int remove(state* test, int player, int i) {
+  int weight = getWeight(*test, i);
+  test->rod &= ~(1u << i);
+  if( player == RED ) {
+    if(i < 16)  test->Rlow &= ~(15ul << (i * 4));
+    else test->Rhigh &= ~(15ul << ((i -16) * 4));
+  }else {
+    if(i < 16)  test->Blow &= ~(15ul << (i * 4));
+    else test->Bhigh &= ~(15ul << ((i -16) * 4));
+  }
+
+  return weight;
+}
+
+
+
+pair<int, int> getTorque(state test) {
+  pair<int, int> torque;
+  torque.first = 0;
+  torque.second = 0;
+  for (int i = 0; i < 31; i++) {
+    if (test.rod & 1u<<i) {
+      int weight = getWeight(test, i);
+      torque.first -= (i - 12) * weight;
+      torque.second -= (i - 14) * weight;
+    }
+  }
+  // gravity
+  torque.first -=  3 * 3;
+  torque.second -= 1 * 3;
+  return torque;
+}
+
+
+
+std::vector<pair<int, int> > getMoveAvail(state test, int player) {
+  std::vector<pair<int, int> > moves;
+  pair<int, int> move;
+  std::vector<int> positions = getPosAvail(test);
+  std::vector<int> blocks = getBlockAvail(test, player);
+  for(int i = 0; i < positions.size() ; i ++ ) {
+    for(int j = 0; j < blocks.size(); j ++ ){
+      int pos = positions[i];
+      int weight = blocks[j];
+      state s = test;
+      place(&s, player, pos, weight);
+      pair<int, int> t = getTorque(s);
+      if( t.first * t.second >= 0) {
+        move.first = pos;
+        move.second = weight;
+        moves.push_back(move);
+      }
+    }
+  }
+  return moves;
+}
 void printState(state test) {
   for(int i = 0; i < 31; i ++) {
     printf("%4d", i-15);
@@ -202,70 +303,150 @@ void printState(state test) {
   printf("\n");
 }
 
-pair<int, int> getTorque(state test) {
-  pair<int, int> torque;
-  torque.first = 0;
-  torque.second = 0;
-  for (int i = 0; i < 31; i++) {
-    if (test.rod & 1u<<i) {
-      int weight = 0;
-      /*
-      if (i < 16) {
-        weight = (test.Rlow & (15 << (i*4))) | (test.Blow & (15 << (i*4)));
-        torque.first += ((i - 12)*weight);
-        torque.second += ((i - 14)*weight);
-      }else if{
-        weight = (test.Rhigh & (15 << ((i - 16)*4))) | (test.Bhigh & (15 << ((i - 16)*4)));
-        torque.first -= ((i - 15 + 3)*weight);
-        torque.second -= ((i - 15 + 1)*weight);
+
+
+
+
+class StateTree {
+  public:
+    StateTree(state s, int player, int step = 2)  {
+      _sbegin = new StateNode(s, player, 0);
+      _player = player;
+      _step = step;
+    }
+    void constructTree() {
+      constructTreeRec(_sbegin);
+    }
+    pair<int,int> pick() {
+      state final;
+      float value = pruning(_sbegin, MIN, MAX, final);
+      return diff_state( _sbegin->_s, final);
+   }
+  private:
+    class StateNode {
+      public:
+        StateNode(state s, int player, int level) {
+          _s  = s;
+          _player = player;
+          _level = level;
+          _value = 0;
+        }
+        state _s;
+        int _player;
+        int _level;
+        float _value;
+        std::vector<StateNode * > _choices;
+    };
+    StateNode * _sbegin;
+    int _step;
+    int _player;
+
+    float pruning(StateNode* p, float alpha, float beta, state &final) {
+      if( p->_level == 2 * _step - 1) {
+        return p->_value;
       }
-      */
+      float value;
+      for(int i =0; i < p->_choices.size();i ++) {
+        if(p->_player == _player) {
+          value = pruning(p->_choices[i], alpha, beta, final);
+          if( value > alpha){
+            final = p->_s;
+          }
+          if (alpha >= beta) {
+            return alpha;
+          }
+        }
+        else {
+          value = pruning(p->_choices[i], alpha, beta, final);
+          if( value < beta) {
+            final = p->_s;
+          }
+          if( alpha >= beta) {
+            return beta;
+          }
+        }
+      }
 
-      weight = getWeight(test, i);
-      torque.first -= (i - 12) * weight;
-      torque.second -= (i - 14) * weight;
+      return p->_player == _player ? alpha : beta;
     }
-  }
-  // gravity
-  torque.first -=  3 * 3;
-  torque.second -= 1 * 3;
-  return torque;
-}
+    void constructTreeRec(StateNode *p) {
+      int level = p->_player;
+      if(level == 2 * _step - 1){
+        assert( p->_player == _player);
+        int l = getLeftNumber(p->_s, p->_player);
+        int r = getRightNumber(p->_s, p->_player);
+        float value = 1 / abs(l - r);
+        pair<int, int> t = getTorque(p->_s);
+        value += 1 / abs(t.first - t.second);
+        p->_value = value;
+        return;
+      }
+      int player = p->_player;
+      std::vector<pair<int, int> > moves = getMoveAvail(p->_s, player);
+      for(int i  = 0; i < moves.size(); i ++ ){
+        int pos = moves[i].first;
+        int weight = moves[i].second;
+        state next = p->_s;
+        place(&next, player, pos, weight);
+        StateNode * nextNode = new StateNode(next, 2 - player, level + 1);
+        p->_choices.push_back(nextNode);
+        constructTreeRec(nextNode);
+      }
+    }
+};
 
 
-
-
-void place(state * test, int player, int i, int weight) {
-    test->rod |= 1u << i;
-    if( player == 0 ) {
-      if(i < 16)  test->Rlow |= weight << (i * 4);
-      else test->Rhigh |= weight << ((i -16) * 4);
+void smarter_tip(state test, int mode , int player) {
+  if ( mode == PLACE) { // for placeing blocks
+    if (player == RED) {
+      // try best to distribute the blocks
+      int remain = getBlockAvail(test, RED).size();
+      StateTree tree(test, RED, remain>=2? 2:1);
+      pair<int, int> move = tree.pick();
+      std::cout << move.first << " " << move.second << std::endl;
     }else {
-      if(i < 16) test->Blow |= weight << (i * 4);
-      else test->Bhigh |= weight << ((i -16) * 4);
-    }
-}
+      // try best to force red places his blocks onto one side
+      int l = getLeftNumber(test, RED);
+      int r = getRightNumber(test, RED);
+      int torque = 1;
+      if( r > l) {
+        torque = 0;
+      }
+      std::vector<pair<int, int> > moves = getMoveAvail(test, player);
+      int m = MAX;
+      int p = -1;
+      int w;
+      for(int i = 0; i < moves.size(); i ++) {
+        int pos = moves[i].first;
+        int weight = moves[i].second;
+        if( pos == -1){  p = pos; w = weight; }
 
-int remove(state* test, int player, int i) {
-  int weight = getWeight(*test, i);
-  test->rod &= ~(1u << i);
-  if( player == 0 ) {
-    if(i < 16)  test->Rlow &= ~(15ul << (i * 4));
-    else test->Rhigh &= ~(15ul << ((i -16) * 4));
-  }else {
-    if(i < 16)  test->Blow &= ~(15ul << (i * 4));
-    else test->Bhigh &= ~(15ul << ((i -16) * 4));
+        state next = test;
+        place(&next, BLUE, pos, weight);
+
+        pair<int , int> t = getTorque(test);
+
+        if( torque == 1) {
+          if( t.second < m ) {
+            m = t.second;
+            p = pos;
+            w = weight;
+          }
+        }
+        else {
+          if( abs(t.first) < m) {
+            m = abs(t.first);
+            p = pos;
+            w = weight;
+          }
+        }
+      }
+    }
   }
 
-  return weight;
+  else { // for remove blocks
+  }
 }
-
-/*
-std::vector<int> getPosAvail(state test) {
-  std::vector<int> pos;
-  for(int i = 0; i < 
-}
-*/
 void greedy_tip(state test, int mode, int player) {
   if( mode == 1) {  // for plaing blocks
     // greedy algorithm, pick block from 1 up to 12
