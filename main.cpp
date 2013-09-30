@@ -5,23 +5,14 @@
 
 #include <iostream>
 #include <fstream>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 using namespace std;
 
 ifstream file;
-
-struct state {
-  unsigned int rod:31;
-  unsigned long Rlow:64;
-  unsigned long Rhigh:60;
-  unsigned long Blow:64;
-  unsigned long Bhigh:60;
-  short Rremaining:12;
-  short Bremaining:12;
-};
-state board;
-
-
+/*
 char peekFile() {
   return file.peek();
 }
@@ -44,9 +35,32 @@ void stepOverDelimiters(){
     file.get();
   }
 }
+*/
 
-void getState(char* fileName) {
+
+struct state {
+  unsigned int rod:31;
+  unsigned long Rlow:64;
+  unsigned long Rhigh:60;
+  unsigned long Blow:64;
+  unsigned long Bhigh:60;
+  unsigned short Rremaining;
+  unsigned short Bremaining;
+  int Rfirst;
+  int Rlast;
+  int Blast;
+};
+
+static state board;
+
+int isEmpty(state test, int i) {
+  return test.rod & (1u << i);
+}
+
+void getState(const char* fileName) {
+  bzero(&board, sizeof(board));
   file.open(fileName);
+  /*
   for (int i = 0; i < 31; i++) {
     parseInt();
     stepOverDelimiters();
@@ -74,42 +88,124 @@ void getState(char* fileName) {
       }
     }
   }
-  closeFile();
+  */
+  unsigned long  weight;
+  int pos, player = 0;
+  int rf = 1;
+  board.Rremaining = 0xffff;
+  board.Bremaining = 0xffff;
+  while ( file >> pos >> weight >> player ) {
+    pos += 15;
+    if ( weight) {
+      if (player == 1 && rf == 1) {
+        board.Rfirst = pos;
+        rf = 0;
+      }
+      board.rod |= 1u << pos;
+      if( player == 1) {
+        if (pos < 16) {
+          board.Rlow |= weight << (pos * 4) ;
+        }else {
+          board.Rhigh |= weight << ( ( pos - 16 ) * 4);
+        }
+        board.Rremaining &= ~(1u << weight);
+        board.Rlast = pos;
+      }else if (player == 2){
+        if( pos < 16) {
+          board.Blow |= weight << ( pos * 4);
+        }else {
+          board.Bhigh |= weight << ( ( pos - 16) * 4);
+        }
+        board.Bremaining &= ~(1u << weight);
+        board.Blast = pos;
+      }
+    }
+  }
+  file.close();
 }
 
 
-int getWeightSingle(unsigned long bits, int idx, int stride) {
-  int mask = (1u << stride) - 1;
-  int off = idx * stride;
-  return (bits & (mask << off))>> off;
+
+int getWeightSingle(unsigned long bits, int idx) {
+  int off = idx * 4;
+  return (bits & (15ul << off))>> off;
 }
 
 
 int getWeight(state test, int i) {
+  if ( i == 11) {
+    return 3;
+  }
   int weight = 0;
   if(i < 16) {
-    weight = getWeightSingle(test.Rlow, i ,4) | getWeightSingle(test.Blow, i, 4);
+    weight = getWeightSingle(test.Rlow, i) | getWeightSingle(test.Blow, i);
   }else {
-    weight = getWeightSingle(test.Rhight, i - 16, 4) | getWeightSingle(test.Bhight, i - 16 ,4);
+    weight = getWeightSingle(test.Rhigh, i - 16) | getWeightSingle(test.Bhigh, i - 16);
+  }
   return weight;
 }
 
 int isBlue(state test, int i) {
-  if (i < 16 && getWeightSingle(test.Blow, i, 4)) return 1;
-  if( i >= 16 && getWeightSingle(test.Bhight, i-16, 4) ) return 1;
+  if (i < 16 && getWeightSingle(test.Blow, i)) return 1;
+  if( i >= 16 && getWeightSingle(test.Bhigh, i-16) ) return 1;
   return 0;
 }
 
 int isRed(state test, int i) {
-  return !isBlue(test, i);
+  if (i < 16 && getWeightSingle(test.Rlow, i)) return 1;
+  if( i >= 16 && getWeightSingle(test.Rhigh, i-16) ) return 1;
+  return 0;
+}
+
+void printState(state test) {
+  for(int i = 0; i < 31; i ++) {
+    printf("%4d", i-15);
+  }
+  printf("\n");
+  int blocks[31] = {0};
+  int weight;
+  for(int i = 0; i < 31;i ++ ) {
+    if(test.rod & (1u << i) ) {
+      weight = getWeight(test, i);
+      printf("%4d", weight);
+      if( isRed(test, i) )
+        blocks[i] = 1;
+      else if( isBlue(test, i))
+        blocks[i] = 2;
+    }else {
+      printf("    ");
+    }
+  }
+  printf("\n");
+  for(int i = 0; i < 31; i ++ ) {
+    if( blocks[i] == 1) {
+      printf("   R");
+    }else if( blocks[i] == 2) {
+      printf("   B");
+    }else {
+      printf("    ");
+    }
+  }
+  printf("\n");
+  printf("Red Blocks:\n");
+  for(int i = 1; i <= 12;  ++ i ) {
+    if( test.Rremaining & (1u << i))  {
+      printf("%d ", i);
+    }
+  }
+  printf("\nBlue Blocks:\n");
+  for(int i = 1; i <= 12;  ++ i ) {
+    if( test.Bremaining & (1u << i))  {
+      printf("%d ", i);
+    }
+  }
+  printf("\n");
 }
 
 pair<int, int> getTorque(state test) {
   pair<int, int> torque;
   torque.first = 0;
   torque.second = 0;
-  torque.first -= 6;
-  torque.second += 6;
   for (int i = 0; i < 31; i++) {
     if (test.rod & 1u<<i) {
       int weight = 0;
@@ -126,10 +222,13 @@ pair<int, int> getTorque(state test) {
       */
 
       weight = getWeight(test, i);
-      torque.first += (i - 12) * weight;
-      toque.secode += (i - 15) * weight;
+      torque.first -= (i - 12) * weight;
+      torque.second -= (i - 14) * weight;
     }
   }
+  // gravity
+  torque.first -=  3 * 3;
+  torque.second -= 1 * 3;
   return torque;
 }
 
@@ -143,7 +242,7 @@ void place(state * test, int player, int i, int weight) {
       else test->Rhigh |= weight << ((i -16) * 4);
     }else {
       if(i < 16) test->Blow |= weight << (i * 4);
-      else test->Bhgith |= weight << ((i -16) * 4);
+      else test->Bhigh |= weight << ((i -16) * 4);
     }
 }
 
@@ -161,17 +260,23 @@ int remove(state* test, int player, int i) {
   return weight;
 }
 
+/*
+std::vector<int> getPosAvail(state test) {
+  std::vector<int> pos;
+  for(int i = 0; i < 
+}
+*/
 void greedy_tip(state test, int mode, int player) {
-  if( mode == 0) {  // for plaing blocks
+  if( mode == 1) {  // for plaing blocks
     // greedy algorithm, pick block from 1 up to 12
     int i;
     for(i = 0; i < 12; i ++) {
       if(player == 0 ) {
-        if(Rremainding & (1 << i)) {
+        if(test.Rremaining & (1 << i)) {
           break;
         }
       }else {
-        if(Bremainding & (1 << i)) {
+        if(test.Bremaining & (1 << i)) {
           break;
         }
       }
@@ -266,9 +371,17 @@ void greedy_tip(state test, int mode, int player) {
 
 int main(int argc, const char * argv[])
 {
-  
-  // insert code here...
-  std::cout << "H";
+  int player, mode;
+  float remaining_time;
+  mode = atoi(argv[1]);
+  player = atoi(argv[2]);
+  remaining_time = atof(argv[3]);
+
+  std::string filename = "board.txt";
+  getState(filename.c_str());
+  printState(board);
+  pair<int, int> t = getTorque(board);
+  std::cout << t.first << " " << t.second << endl;
   return 0;
 }
 
