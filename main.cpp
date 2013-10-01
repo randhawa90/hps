@@ -415,7 +415,6 @@ class StateTree {
       _final = s;
     }
     ~StateTree() {
-      std::cout << StateNode::count << std::endl;
       delete _sbegin;
     }
     void constructTree() {
@@ -426,7 +425,10 @@ class StateTree {
       if( _final.rod == _sbegin->_s.rod) {
         return getRandomMove(_sbegin->_s, _player, _mode);
       }
-      return diff_state( _sbegin->_s, _final);
+      if( _mode == PLACE)
+        return diff_state( _sbegin->_s, _final);
+      else
+        return diff_state(_final, _sbegin->_s);
    }
   private:
     class StateNode {
@@ -497,7 +499,7 @@ class StateTree {
           int op = RED+BLUE - p->_player;
           int l = getLeftNumber(p->_s, op);
           int r = getRightNumber(p->_s, op);
-          float value = 1.0 / (abs(l - r) + 0.01);
+          float value = 10.0 / (abs(l - r) + 0.01);
           pair<int, int> t = getTorque(p->_s);
           value += 1.0 / (abs(t.first + t.second) + 0.1);
 
@@ -507,7 +509,7 @@ class StateTree {
             for(int i = 0; i < blocks.size() ;i ++ ) {
               sum += blocks[i];
             }
-            value += 10.0 / sum;
+            value += 1.0 / sum;
           }
           p->_value = value;
         }else {
@@ -589,8 +591,7 @@ pair<int, int> smarter_tip(state test, int mode , int player) {
   if ( mode == PLACE) { // for placeing blocks
     if (player == RED) {
       // try best to distribute the blocks
-      int remain = 1; //getRemainingBlock(test, RED).size();
-      StateTree tree(test, RED, mode, remain>=2? 2:1);
+      StateTree tree(test, RED, mode, 1);
       tree.constructTree();
       pair<int, int> move = tree.pick();
       return move;
@@ -612,12 +613,12 @@ pair<int, int> smarter_tip(state test, int mode , int player) {
       // still try to balance the numbers of left and right
       int red = getRedNumber(test);
       if (red > 0){
-        StateTree tree(test, player, mode, red >= 3? 5: 2 *  red - 1);
+        StateTree tree(test, player, mode, 1);
         tree.constructTree();
         return tree.pick();
       }else {
         int r = getPlacedPos(test).size();
-        StateTree tree(test, player, mode, r);
+        StateTree tree(test, player, mode, 2);
         tree.constructTree();
         return tree.pick();
       }
@@ -798,10 +799,14 @@ int main(int argc, const char * argv[])
   */
   printState(board);
   pair<int, int> move = smarter_tip(board, mode, player);
-  if( mode == PLACE)
+  if( mode == PLACE) {
+    std::cout << "Place " << move.second << " at " << move.first - 15 << endl;
     place(&board, player, move.first, move.second);
-  else
+  }
+  else {
+    std::cout << "Remoe " << move.second << " from " << move.first - 15 << std::endl;
     remove(&board, player, move.first);
+  }
   printState(board);
   /*
   std::vector< pair<int, int> > moves = getRemoveAvail(board, RED);
