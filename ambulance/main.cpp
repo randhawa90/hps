@@ -4,6 +4,51 @@
 #include <string>
 #include <map>
 #include <climits>
+#include <cstdlib>
+
+
+
+class Direction {
+  public:
+    static int NUM;
+    enum dir { up = 0, left, upleft, upright, downleft, downright, right, down};
+    static pair<int, int> getStep(int d) {
+      pair< int, int> step;
+      int x, y
+      switch(d) {
+        case up:
+          x = 0; y = -1; break;
+        case down:
+          x = 0; y = 1; break;
+        case left:
+          x = -1; y = 0; break;
+        case right:
+          x = 1; y = 0; break;
+        case upleft:
+          x = -1; y = -1; break;
+        case upright:
+          x = 1, y = -1;  break;
+        case downleft:
+          x = -1; y = 1; break;
+        case downright:
+          x = 1; y = 1;  break;
+        default:
+          x =-0; y = 0;
+      }
+      step.first = x;
+      step.second = y;
+      return step;
+    }
+  static int getRandomDir() {
+    int r = rand() %  Direction;;NUM;
+    return r;
+  }
+
+  static int getOppositeDir(int r) {
+    return Direction::NUM - 1 - r;
+  }
+};
+int Direction::NUM = 8;
 
 class Location {
   private:
@@ -25,6 +70,9 @@ class Location {
       Location l(this->x + x, this->y + y);
       return l;
     }
+    inline Location move(pair<int,int> step) {
+      return move(step.first, step.second);
+    }
     inline void reset() { x = 0; y = 0; }
 };
 
@@ -34,35 +82,90 @@ class Patient {
     int time;
     int groups;
   public:
+    enum State { WAIT, INCAR, DEAD };
     Peopple( int x, int y, int t) : l(x, y) {
       time = t;
       group = 0;
+      saved = WAIT;
     }
     Patient ( Location loc, int t) : l(loc.getX(), loc.getY() ) {
       time = t;
       group = 0;
+      saved = WAIT;
     }
+
+    State saved;
     inline int getX() const { return l.getX();}
     inline int getY() const { return l.getY();}
     inline int getT() const { return time; };
-    inline Location getLoc() const { return l; }
+    inline Location getL() const { return l; }
     inline void setT(int t) { time  = t; }
     inline int getG() const { return group; }
     inline void setG(int g) { group = g; }
+    inline void setS(State s) { saved = s ;}
+    inline State getS() const { return saved; }
 };
 
 
-class Hospital{
+class Ambulance {
+  private:
+    const static int MAX_PATIENT = 4;
+    static int ID;
+    std::vector<int> patient_index;
+    int num;
+    int hospital;
+    int id;
+    Location l;
+
   public:
-    Hospital(int num) {
-      nam = num;
+    Ambulance(int hos) {
+      hospital = hos;
+      id = ID;
+      ID ++;
+    }
+    Ambulance(const Ambulance& a ) {
+      hospital = a.hospital;
+      id = a.id;
     }
 
-    inline void setL(Location loc ) { l = loc; }
-    inline void setL(int x, int y) { l.setX(x); l.setY(y); }
+    inline void setL(Location loc) { l = loc; }
+    inline Location getL() const { return l; }
+    inline int load(std::vector<Patient> & patients, int i) {
+      patient_index.push_back(i);
+      patients[i].setS(Patient::State::INCAR);
+      num ++; 
+      return 1;
+    }
+};
+
+int Ambulance::ID = 0;
+
+class Hospital{
+  public:
+    Hospital(int num, int idx) {
+      nam = num;
+      id = idx;
+      for(int i = 0; i < num; i++ ){
+        ambulances.push_back(Ambulance(id));
+      }
+    }
+    inline void setL(Location loc ) {
+      l = loc;
+      for(int i = 0; i < ambulances.size();i ++) {
+        ambulances[i].setL(loc);
+      }
+    }
+
+    int getAmbulanceNum() {return nam; }
+    Ambulance & getAmbulance(int i) {
+      assert( i < nam );
+      return ambulances[i];
+    }
   private:
     Location l;
     int nam;
+    int id;
+    std::vector<Ambulance> ambulances;
 }
 
 
@@ -125,7 +228,7 @@ class KMeansLocateHospitalHelper {
     static bool cluster(std::vector<Patient> &patients, std::vecote<Location> & locs) {
       bool changed = false;
       for(int i = 0; i < patients.size(); i ++ ){
-        Location l = patients[i].getLoc();
+        Location l = patients[i].getL();
         int dis = INT_MAX;
         int g;
         for(int j = 0; j < locs.size(); j ++){
@@ -152,12 +255,13 @@ class KMeansLocateHospitalHelper {
           locs.clear();
 
           for(int i = 0; i < tmps.size(); i ++ ) {
-            Location l1 = tmps[i].move(-1, -1);
-            Location l2 = tmps[i].move(1, 1);
+            int dir1 = Direction::getRandomDir();
+            int dir2 = Direction::getOppositeDir(dir1);
+            Location l1 = tmps[i].move(Direction::getStep(dir1));
+            Location l2 = tmps[i].move(Direction::getStep(dir2));
 
             locs.push_back(l1);
-            locs.push_back(l2);
-          }
+            locs.push_back(l2); }
         }else {
           int need = num - groups.size();
           std::vector<Location> maxlocs;
@@ -169,8 +273,10 @@ class KMeansLocateHospitalHelper {
             locs.push_back(minlocs[i]);
           }
           for(int i = 0; i < maxlocs.size(); i ++ ) {
-            Location l1 = tmps[i].move(-1, -1);
-            Location l2 = tmps[i].move(1, 1);
+            int dir1 = Direction::getRandomDir();
+            int dir2 = Direction::getOppositeDir(dir1);
+            Location l1 = tmps[i].move(Direction::getStep(dir1));
+            Location l2 = tmps[i].move(Direction::getStep(dir2));
 
             locs.push_back(l1);
             locs.push_back(l2);
@@ -195,10 +301,48 @@ class KMeansLocateHospitalHelper {
 };
 
 
-class DijkstraScheduler {
+class GreedyScheduler{
+  private:
+    static int greedyPickPatient(std::vector<Patient> &patients, Ambulance& am , int& time ) {
+      assert( am.num < Ambulance::MAX_PATIENT);
+      Location l = am.getL();
+      int emin = INT_MAX;
+      int idx;
+      for(int i = 0; i < patients.size(); i ++) {
+        if(patients[i].getS() == Patient::State::WAIT) {
+          int e = l.getD(patients[i].getL()) + patients[i].getT();
+          if( e < emin) {
+            emin = e;
+            idx = i;
+          }
+        }
+      }
+      return idx;
+      time = emin + 1;
+    }
+
+
+    static void decreaseTime(std::vector<Patient> & patients, int time) {
+      for(int i = 0; i < patients.size(); i ++) {
+        int t = patients[i].getT();
+        if( t - time < 0) {
+          patients[i].setS(Patient::State::DEAD);
+        }
+        else {
+          patients[i].setT(t -time);
+        }
+      }
+    }
   public:
     static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
-      return 0;
+      Ambulance & am = hospitals[0].getAmbulance(0);
+      for(int i = 0; i < Ambulance::MAX_PATIENT; i ++){
+        int time;
+        int idx = greedyPickPatient(patients, am, time);
+        am.load(patients, idx);
+        am.setL(patients[idx].getL());
+        decreaseTime(patients, time);
+      }
     }
 }
 
@@ -217,7 +361,7 @@ int main() {
   int nam;
   for(int i = 0; i < 5; i ++ ) {
     ifs >> nam;
-    Hospital h(nam);
+    Hospital h(nam, i);
     hospitals.push_back(h);
   }
 
