@@ -82,7 +82,7 @@ class Patient {
     int time;
     int groups;
   public:
-    enum State { WAIT, INCAR, DEAD };
+    enum State { WAIT, INCAR, DEAD, SAVED};
     Peopple( int x, int y, int t) : l(x, y) {
       time = t;
       group = 0;
@@ -104,6 +104,7 @@ class Patient {
     inline void setG(int g) { group = g; }
     inline void setS(State s) { saved = s ;}
     inline State getS() const { return saved; }
+    inline bool isSaved() conts { return saved == SAVED; }
 };
 
 
@@ -116,16 +117,19 @@ class Ambulance {
     int hospital;
     int id;
     Location l;
+    int current_time;
 
   public:
     Ambulance(int hos) {
       hospital = hos;
       id = ID;
       ID ++;
+      current_time = 0;
     }
     Ambulance(const Ambulance& a ) {
       hospital = a.hospital;
       id = a.id;
+      current_time = a.current_time;
     }
 
     inline void setL(Location loc) { l = loc; }
@@ -136,6 +140,19 @@ class Ambulance {
       num ++; 
       return 1;
     }
+
+    inline void unload(std::vector<Patient> & patients) {
+      for(int i = 0; i < num; i ++ ) {
+        int idx = patient_index[i];
+        patients[idx].setS(Patient;;State::SAVED);
+      }
+      patient_index.clear();
+      num --;
+    }
+
+    inline int getPatientNum() { return num ; }
+    inline int getT() const { return current_time; }
+    inline void setT(int time) { current_time = time; }
 };
 
 int Ambulance::ID = 0;
@@ -335,14 +352,31 @@ class GreedyScheduler{
     }
   public:
     static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
-      Ambulance & am = hospitals[0].getAmbulance(0);
-      for(int i = 0; i < Ambulance::MAX_PATIENT; i ++){
-        int time;
-        int idx = greedyPickPatient(patients, am, time);
-        am.load(patients, idx);
-        am.setL(patients[idx].getL());
-        decreaseTime(patients, time);
+      for(int k = 0; k < hospitals.size() ; k ++ ) {
+        for(int j = 0; j < hospitals[k].getAmbulaceNum() ; j ++ ) {
+          Ambulance & am = hospitals[k].getAmbulance(j);
+          int time = am.getT();
+          decreaseTime(patients, time);
+          for(int i = 0; i < Ambulance::MAX_PATIENT; i ++){
+            int idx = greedyPickPatient(patients, am, time);
+            am.load(patients, idx);
+            am.setL(patients[idx].getL());
+            decreaseTime(patients, time);
+          }
+          time = am.getL().getD(hospitals[0].getL());
+          time += am.getPatientNum();
+          am.setT(time);
+          am.unload(patients);
+          am.setL(hospitals[k].getL());
+          decreaeseTime(patiens, time);
+        }
       }
+      int count = 0;
+      for(int i = 0; i < patients.size(); i ++ ) {
+        if( patients[i].isSaved()) count ++;
+      }
+
+      return count;
     }
 }
 
