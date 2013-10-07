@@ -324,7 +324,7 @@ class GreedyScheduler{
       assert( am.num < Ambulance::MAX_PATIENT);
       Location l = am.getL();
       int emin = INT_MAX;
-      int idx;
+      int idx = -1;
       for(int i = 0; i < patients.size(); i ++) {
         if(patients[i].getS() == Patient::State::WAIT) {
           int e = l.getD(patients[i].getL()) + patients[i].getT();
@@ -334,8 +334,8 @@ class GreedyScheduler{
           }
         }
       }
-      return idx;
       time = emin + 1;
+      return idx;
     }
 
 
@@ -350,19 +350,34 @@ class GreedyScheduler{
         }
       }
     }
+
+    static bool gameover(std::vector<Patient> &patients) {
+      for(int i = 0; i < patients.size(); i ++) {
+        if( patients[i].getS() == Patient::State::WAIT) {
+          return false;
+        }
+      }
+      return true;
+    }
   public:
     static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
       for(int k = 0; k < hospitals.size() ; k ++ ) {
         for(int j = 0; j < hospitals[k].getAmbulaceNum() ; j ++ ) {
+          if ( gameover(patients) == true)
+            goto end;
           Ambulance & am = hospitals[k].getAmbulance(j);
           int time = am.getT();
           decreaseTime(patients, time);
-          for(int i = 0; i < Ambulance::MAX_PATIENT; i ++){
+          int i = 0;
+          for(; i < Ambulance::MAX_PATIENT; i ++){
             int idx = greedyPickPatient(patients, am, time);
+            if( idx ==  -1) 
+              break;
             am.load(patients, idx);
             am.setL(patients[idx].getL());
             decreaseTime(patients, time);
           }
+          if( i == 0) continue;
           time = am.getL().getD(hospitals[0].getL());
           time += am.getPatientNum();
           am.setT(time);
@@ -371,11 +386,11 @@ class GreedyScheduler{
           decreaeseTime(patiens, time);
         }
       }
+end:
       int count = 0;
       for(int i = 0; i < patients.size(); i ++ ) {
         if( patients[i].isSaved()) count ++;
       }
-
       return count;
     }
 }
