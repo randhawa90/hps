@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <utility>
+#include <algorithm>
 
 class Direction {
   public:
@@ -220,6 +221,10 @@ class Hospital{
     }
 
     inline Location getL() const { return l ;}
+
+    bool compare(Hospital& h) {
+      return nam > h.nam;
+    }
   private:
     Location l;
     int nam;
@@ -373,11 +378,12 @@ class GreedyScheduler{
       int emin = INT_MAX;
       int idx = -1;
       for(int i = 0; i < patients.size(); i ++) {
-        if( patients[i].getG() != am.getHospitalId()) continue;
+        //if( patients[i].getG() != am.getHospitalId()) continue;
         int ss = std::min(patients[i].getT(), stime);
         Location lp = patients[i].getL();
         if(patients[i].getS() == Patient::WAIT && l.getD(lp)  +  lp.getD(lh) + 1 + am.getPatientNum() + 1 <= ss) {
-          int e = l.getD(patients[i].getL()) + patients[i].getT();
+          //int e = l.getD(patients[i].getL()) + patients[i].getT();
+          int e = l.getD(lp);
           if( e < emin) {
             emin = e;
             idx = i;
@@ -413,6 +419,9 @@ class GreedyScheduler{
         }
       }
       return true;
+    }
+    static bool compare(Hospital h1, Hospital h2) {
+      return h1.compare(h2);
     }
   public:
     static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
