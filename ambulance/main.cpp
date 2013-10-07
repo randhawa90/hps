@@ -60,6 +60,9 @@ class Location {
       this->x = x;
       this->y = y;
     }
+    Location(const Location & l) {
+      x = l.x; y = l.y;
+    }
     Location() {
       reset();
     }
@@ -76,38 +79,60 @@ class Location {
       return move(step.first, step.second);
     }
     inline void reset() { x = 0; y = 0; }
+    friend std::ostream& operator<< ( std::ostream& out, const Location& l);
 };
 
+std::ostream& operator<<(std::ostream& out, const Location & l) {
+  out << l.x << " " << l.y;
+  return out;
+}
 class Patient {
   private:
+    static int ID;
     Location l;
     int time;
+    int current_time;
     int group;
+    int id;
+    int saved_by;
   public:
     enum State { WAIT, INCAR, DEAD, SAVED};
     Patient( int x, int y, int t) : l(x, y) {
       time = t;
+      current_time = time;
       group = 0;
       saved = WAIT;
+      id = ID ++;
     }
     Patient ( Location loc, int t) : l(loc.getX(), loc.getY() ) {
       time = t;
+      current_time = time;
       group = 0;
       saved = WAIT;
+      id = ID ++;
     }
 
     State saved;
     inline int getX() const { return l.getX();}
     inline int getY() const { return l.getY();}
-    inline int getT() const { return time; };
+    inline int getT() const { return current_time; };
+    inline int decreaseT(int t) { current_time -= t;}
+    inline void restore() { current_time = time; }
     inline Location getL() const { return l; }
-    inline void setT(int t) { time  = t; }
     inline int getG() const { return group; }
     inline void setG(int g) { group = g; }
     inline void setS(State s) { saved = s ;}
+    inline void save(int id) { saved_by = id, setS(SAVED);}
     inline State getS() const { return saved; }
     inline bool isSaved() const { return saved == SAVED; }
+    friend std::ostream& operator<< ( std::ostream& out, const Patient & p);
 };
+
+int Patient::ID = 0;
+std::ostream& operator<< ( std::ostream& out, const Patient & p) {
+  out << "Patient: id = " << p.id << " location = (" << p.l << ") saved by ambulance " << p.saved_by;
+  return out;
+}
 
 
 class Ambulance {
@@ -127,11 +152,13 @@ class Ambulance {
       id = ID;
       ID ++;
       current_time = 0;
+      num = 0;
     }
     Ambulance(const Ambulance& a ) {
       hospital = a.hospital;
       id = a.id;
       current_time = a.current_time;
+      num = a.num;
     }
 
     inline void setL(Location loc) { l = loc; }
@@ -139,22 +166,33 @@ class Ambulance {
     inline int load(std::vector<Patient> & patients, int i) {
       patient_index.push_back(i);
       patients[i].setS(Patient::INCAR);
-      num ++; 
+      num ++;
       return 1;
     }
 
     inline void unload(std::vector<Patient> & patients) {
       for(int i = 0; i < num; i ++ ) {
         int idx = patient_index[i];
-        patients[idx].setS(Patient::SAVED);
+        patients[idx].save(id);
       }
       patient_index.clear();
-      num --;
+      num  = 0;
     }
 
     inline int getPatientNum() { return num ; }
     inline int getT() const { return current_time; }
     inline void setT(int time) { current_time = time; }
+    inline int getHospitalId() { return hospital; }
+
+    int getShortestTime(std::vector<Patient> & patients) const { 
+      int s = INT_MAX;
+      for(int i = 0; i < patient_index.size();i ++) {
+        int id = patient_index[i];
+        if( patients[id].getT() < s)
+          s = patients[id].getT();
+      }
+      return s;
+    }
 };
 
 int Ambulance::ID = 0;
@@ -196,8 +234,9 @@ class KMeansLocateHospitalHelper {
       std::vector<int> nums;
       for(int i = 0; i < locs.size(); i ++) {
         locs[i].reset();
-        nums[i] = 0;
+        nums.push_back(0);
       }
+
       for(int i = 0; i < patients.size() ; i ++ ) {
         int g = patients[i].getG();
         locs[g].setX(locs[g].getX() + patients[i].getX());
@@ -229,19 +268,20 @@ class KMeansLocateHospitalHelper {
       for(int i = 0; i < size; i++ ) {
         int idx = 0;
         int num = INT_MAX ;
-        for(int j = 0; j < locs_num.size(); j ++ ) {
-          if( locs_num[j] < num ) {
-            idx = j;
-            num = locs_num[j];
+        std::map<int, int>::iterator iter = locs_num.begin();
+        for(; iter != locs_num.end(); iter++) {
+          if( iter->first < num ) {
+            idx = iter->first;
+            num = iter->second;
           }
         }
 
-        min.push_back(locs[locs_num[idx]]);
+        min.push_back(locs[idx]);
         locs_num.erase(idx);
       }
-
-      for(int i = 0; i < num; i ++){
-        max.push_back(locs[locs_num[i]]);
+      std::map<int , int>::iterator iter = locs_num.begin();
+      for(; iter != locs_num.end(); iter ++) {
+        max.push_back(locs[iter->first]);
       }
     }
 
@@ -265,14 +305,16 @@ class KMeansLocateHospitalHelper {
       }
       return changed;
     }
+
   public:
     static float locate(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
       int num = hospitals.size();
       std::vector<Location> locs;
+      locs.push_back(Location());
       getGravity(patients, locs);
-      std::vector<Location> tmps = locs;
       while(locs.size() != num) {
         if( num >= 2 * locs.size()) {
+          std::vector<Location> tmps = locs;
           locs.clear();
 
           for(int i = 0; i < tmps.size(); i ++ ) {
@@ -296,8 +338,8 @@ class KMeansLocateHospitalHelper {
           for(int i = 0; i < maxlocs.size(); i ++ ) {
             int dir1 = Direction::getRandomDir();
             int dir2 = Direction::getOppositeDir(dir1);
-            Location l1 = tmps[i].move(Direction::getStep(dir1));
-            Location l2 = tmps[i].move(Direction::getStep(dir2));
+            Location l1 = maxlocs[i].move(Direction::getStep(dir1));
+            Location l2 = maxlocs[i].move(Direction::getStep(dir2));
 
             locs.push_back(l1);
             locs.push_back(l2);
@@ -305,15 +347,14 @@ class KMeansLocateHospitalHelper {
         }
 
         cluster(patients, locs);
+        getGravity(patients, locs);
       }
-
 
       while(1) {
-        getGravity(patients, locs);
         bool changed = cluster(patients, locs);
         if( changed == false) break;
+        getGravity(patients, locs);
       }
-
       for(int i = 0; i < num; i ++) {
         hospitals[i].setL(locs[i]);
       }
@@ -324,13 +365,18 @@ class KMeansLocateHospitalHelper {
 
 class GreedyScheduler{
   private:
-    static int greedyPickPatient(std::vector<Patient> &patients, Ambulance& am , int& time ) {
+    static int greedyPickPatient(std::vector<Patient> &patients, std::vector<Hospital> & hospitals,  Ambulance& am , int& time ) {
       assert( am.getPatientNum() < Ambulance::MAX_PATIENT);
       Location l = am.getL();
+      Location lh = hospitals[am.getHospitalId()].getL();
+      int stime = am.getShortestTime(patients);
       int emin = INT_MAX;
       int idx = -1;
       for(int i = 0; i < patients.size(); i ++) {
-        if(patients[i].getS() == Patient::WAIT) {
+        if( patients[i].getG() != am.getHospitalId()) continue;
+        int ss = std::min(patients[i].getT(), stime);
+        Location lp = patients[i].getL();
+        if(patients[i].getS() == Patient::WAIT && l.getD(lp)  +  lp.getD(lh) + 1 + am.getPatientNum() + 1 <= ss) {
           int e = l.getD(patients[i].getL()) + patients[i].getT();
           if( e < emin) {
             emin = e;
@@ -338,7 +384,7 @@ class GreedyScheduler{
           }
         }
       }
-      time = emin + 1;
+      time = l.getD(patients[idx].getL()) + 1;
       return idx;
     }
 
@@ -346,15 +392,20 @@ class GreedyScheduler{
     static void decreaseTime(std::vector<Patient> & patients, int time) {
       for(int i = 0; i < patients.size(); i ++) {
         int t = patients[i].getT();
+        if( patients[i].isSaved()) continue;
         if( t - time < 0) {
           patients[i].setS(Patient::DEAD);
         }
         else {
-          patients[i].setT(t -time);
+          patients[i].decreaseT(time);
         }
       }
     }
-
+    static void restoreTime(std::vector<Patient> & patients) {
+      for(int i = 0 ; i < patients.size();i ++) {
+        patients[i].restore();
+      }
+    }
     static bool gameover(std::vector<Patient> &patients) {
       for(int i = 0; i < patients.size(); i ++) {
         if( patients[i].getS() == Patient::WAIT) {
@@ -367,24 +418,28 @@ class GreedyScheduler{
     static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
       for(int k = 0; k < hospitals.size() ; k ++ ) {
         for(int j = 0; j < hospitals[k].getAmbulanceNum() ; j ++ ) {
+          restoreTime(patients);
           if ( gameover(patients) == true)
             goto end;
           Ambulance & am = hospitals[k].getAmbulance(j);
           int time = am.getT();
           decreaseTime(patients, time);
+          int run_time = 0;
           int i = 0;
           for(; i < Ambulance::MAX_PATIENT; i ++){
-            int idx = greedyPickPatient(patients, am, time);
+            int idx = greedyPickPatient(patients, hospitals, am, time);
             if( idx ==  -1) 
               break;
             am.load(patients, idx);
             am.setL(patients[idx].getL());
             decreaseTime(patients, time);
+            run_time += time;
           }
           if( i == 0) continue;
           time = am.getL().getD(hospitals[0].getL());
           time += am.getPatientNum();
-          am.setT(time);
+          run_time += time;
+          am.setT(run_time);
           am.unload(patients);
           am.setL(hospitals[k].getL());
           decreaseTime(patients, time);
@@ -393,7 +448,10 @@ class GreedyScheduler{
 end:
       int count = 0;
       for(int i = 0; i < patients.size(); i ++ ) {
-        if( patients[i].isSaved()) count ++;
+        if( patients[i].isSaved()) {
+          std::cout << patients[i] << std::endl;
+          count ++;
+        }
       }
       return count;
     }
@@ -406,8 +464,10 @@ int main() {
   std::vector<Patient> patients;
   std::vector<Hospital> hospitals;
   int x, y, t;
+  char c;
   for(int i = 0; i < 300 ;i ++ ) {
-    ifs >> x >> y >> t;
+    ifs >> x >> c >>  y >> c >> t;
+    //std::cout << x << " " << y << " " << t << std::endl;
     Patient p(x, y, t);
     patients.push_back(p);
   }
@@ -417,8 +477,8 @@ int main() {
     Hospital h(nam, i);
     hospitals.push_back(h);
   }
-
   KMeansLocateHospitalHelper::locate(patients, hospitals);
-  int nubmer = GreedyScheduler::run(patients, hospitals);
+  int number = GreedyScheduler::run(patients, hospitals);
+  std::cout << number << " patients been saved" << std::endl;
   return 0;
 }
