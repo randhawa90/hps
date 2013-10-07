@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <climits>
+#include <cfloat>
 #include <cstdlib>
 #include <cassert>
 #include <utility>
@@ -291,14 +292,19 @@ class KMeansLocateHospitalHelper {
     }
 
 
-    static bool cluster(std::vector<Patient> &patients, std::vector<Location> & locs) {
+    static bool cluster(std::vector<Patient> &patients, std::vector<Location> & locs, std::vector<int>& weights) {
       bool changed = false;
+      int sum = 0;
+      for(int i = 0; i < weights.size(); i ++) {
+        sum += weights[i];
+      }
+
       for(int i = 0; i < patients.size(); i ++ ){
         Location l = patients[i].getL();
-        int dis = INT_MAX;
+        float dis = FLT_MAX;
         int g;
         for(int j = 0; j < locs.size(); j ++){
-          int d = l.getD(locs[j]);
+          float d = l.getD(locs[j]) * 1.0 * weights[j] / sum;
           if( d < dis ) {
             dis = d;
             g = j;
@@ -317,10 +323,12 @@ class KMeansLocateHospitalHelper {
       std::vector<Location> locs;
       locs.push_back(Location());
       getGravity(patients, locs);
+      std::vector<int> weights(1,1);
       while(locs.size() != num) {
         if( num >= 2 * locs.size()) {
           std::vector<Location> tmps = locs;
           locs.clear();
+          weights.clear();
 
           for(int i = 0; i < tmps.size(); i ++ ) {
             int dir1 = Direction::getRandomDir();
@@ -329,7 +337,10 @@ class KMeansLocateHospitalHelper {
             Location l2 = tmps[i].move(Direction::getStep(dir2));
 
             locs.push_back(l1);
-            locs.push_back(l2); }
+            locs.push_back(l2); 
+            weights.push_back(1);
+            weights.push_back(1);
+          }
         }else {
           int need = num - locs.size();
           std::vector<Location> maxlocs;
@@ -337,8 +348,10 @@ class KMeansLocateHospitalHelper {
           getMaxLocation(patients, locs, need,  maxlocs, minlocs);
 
           locs.clear();
+          weights.clear();
           for(int i = 0; i < minlocs.size(); i ++){
             locs.push_back(minlocs[i]);
+            weights.push_back(1);
           }
           for(int i = 0; i < maxlocs.size(); i ++ ) {
             int dir1 = Direction::getRandomDir();
@@ -348,15 +361,19 @@ class KMeansLocateHospitalHelper {
 
             locs.push_back(l1);
             locs.push_back(l2);
+            weights.push_back(1);
+            weights.push_back(1);
           }
         }
 
-        cluster(patients, locs);
+        cluster(patients, locs, weights);
         getGravity(patients, locs);
       }
-
+      for(int i = 0; i < hospitals.size(); i ++) {
+        weights[i] = hospitals[i].getAmbulanceNum();
+      }
       while(1) {
-        bool changed = cluster(patients, locs);
+        bool changed = cluster(patients, locs, weights);
         if( changed == false) break;
         getGravity(patients, locs);
       }
@@ -378,7 +395,7 @@ class GreedyScheduler{
       int emin = INT_MAX;
       int idx = -1;
       for(int i = 0; i < patients.size(); i ++) {
-        //if( patients[i].getG() != am.getHospitalId()) continue;
+        if( patients[i].getG() != am.getHospitalId()) continue;
         int ss = std::min(patients[i].getT(), stime);
         Location lp = patients[i].getL();
         if(patients[i].getS() == Patient::WAIT && l.getD(lp)  +  lp.getD(lh) + 1 + am.getPatientNum() + 1 <= ss) {
