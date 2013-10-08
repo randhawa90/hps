@@ -426,14 +426,15 @@ class GreedyScheduler{
     static int greedyPickPatient(std::vector<Patient> &patients, std::vector<Hospital> & hospitals,  Ambulance& am , int& time ) {
       assert( am.getPatientNum() < Ambulance::MAX_PATIENT);
       Location l = am.getL();
-      Location lh = hospitals[am.getHospitalId()].getL();
       int stime = am.getShortestTime(patients);
       int emin = INT_MAX;
       int idx = -1;
       for(int i = 0; i < patients.size(); i ++) {
         //if( patients[i].getG() != am.getHospitalId()) continue;
         int ss = std::min(patients[i].getT(), stime);
+        int hid = patients[i].getG();
         Location lp = patients[i].getL();
+        Location lh = hospitals[hid].getL();
         if(patients[i].getS() == Patient::WAIT && l.getD(lp)  +  lp.getD(lh) + 2 <= ss) {
           //int e = l.getD(patients[i].getL()) + patients[i].getT();
           int e = l.getD(lp);
@@ -505,18 +506,21 @@ class GreedyScheduler{
             }
             if( i == 0) continue;
             std::cout << "ambulance " << am.getID();
-            std::vector<int> idx = am.getPatientIndex();
-            for(int i = 0; i < idx.size(); i ++) {
-              int id = idx[i];
+            std::vector<int> idxs = am.getPatientIndex();
+            for(int i = 0; i < idxs.size(); i ++) {
+              int id = idxs[i];
               //std::cout << " " << id << " (" << patients[id].getG() << "," << patients[id].getX() << "," << patients[id].getY() << "," << patients[id].getST()
               std::cout << " " << id << " (" << patients[id].getX() << "," << patients[id].getY() << "," << patients[id].getST()
                         << ");";
             }
-            time = am.getL().getD(hospitals[k].getL()) + 1;
+            int idx = idxs.back();
+            int hid = patients[idx].getG();
+            Location hl = hospitals[hid].getL();
+            time = am.getL().getD(hl) + 1;
             run_time = time;
             am.setT(run_time);
             am.unload(patients);
-            am.setL(hospitals[k].getL());
+            am.setL(hl);
             std::cout << am.getL() << std::endl;
             decreaseTime(patients, time);
           }
