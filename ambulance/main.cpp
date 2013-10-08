@@ -556,19 +556,28 @@ end:
 };
 
 int main() {
-  std::string file = "test";
+  std::string file = "input";
   std::ifstream ifs(file.c_str());
 
   std::vector<Patient> patients;
   std::vector<Hospital> hospitals;
   int x, y, t;
   char c;
+  std::string tmp;
+  getline(ifs, tmp);
   for(int i = 0; i < 300 ;i ++ ) {
     ifs >> x >> c >>  y >> c >> t;
     //std::cout << x << " " << y << " " << t << std::endl;
     Patient p(x, y, t);
     patients.push_back(p);
   }
+
+  while( 1) {
+    ifs >> c;
+    if( !isspace(c) )
+      break;
+  }
+  getline(ifs,tmp);
   int nam;
   for(int i = 0; i < 5; i ++ ) {
     ifs >> nam;
@@ -577,6 +586,6 @@ int main() {
   }
   KMeansLocateHospitalHelper::locate(patients, hospitals);
   int number = GreedyScheduler::run(patients, hospitals);
-  std::cout << number << " patients been saved" << std::endl;
+  //std::cout << number << " patients been saved" << std::endl;
   return 0;
 }
