@@ -291,6 +291,21 @@ class KMeansLocateHospitalHelper {
       }
     }
 
+    static std::vector<int> getNumPatient(std::vector<Patient> & patients) {
+      std::map<int, int> locs_num;
+      for(int i = 0; i < patients.size(); i ++ ) {
+        if( locs_num.find(patients[i].getG()) == locs_num.end()) {
+          locs_num[patients[i].getG()] = 0;
+        }
+        locs_num[patients[i].getG()] ++;
+      }
+      std::vector<int> nums(locs_num.size(), 0);
+      std::map<int, int>::iterator iter;
+      for(iter = locs_num.begin(); iter != locs_num.end(); iter++){
+        nums[iter->first] = iter->second;
+      }
+      return nums
+    }
 
     static bool cluster(std::vector<Patient> &patients, std::vector<Location> & locs, std::vector<int>& weights) {
       bool changed = false;
@@ -369,6 +384,8 @@ class KMeansLocateHospitalHelper {
         cluster(patients, locs, weights);
         getGravity(patients, locs);
       }
+      std::vector<int> nums = getNumPatient(patients);
+
       for(int i = 0; i < hospitals.size(); i ++) {
         weights[i] = hospitals[i].getAmbulanceNum();
       }
@@ -442,6 +459,7 @@ class GreedyScheduler{
     }
   public:
     static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
+      //std::sort(hospitals.begin(), hospitals.end(), compare);
       for(int k = 0; k < hospitals.size() ; k ++ ) {
         for(int j = 0; j < hospitals[k].getAmbulanceNum() ; j ++ ) {
           restoreTime(patients);
