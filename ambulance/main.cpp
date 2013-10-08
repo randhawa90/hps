@@ -393,7 +393,7 @@ class KMeansLocateHospitalHelper {
           getGravity(patients, locs);
         }
       }
-      
+
       for(int i = 0; i < hospitals.size(); i ++) {
         weights[i] = hospitals[i].getAmbulanceNum();
       }
@@ -492,7 +492,7 @@ class GreedyScheduler{
             Ambulance & am = hospitals[k].getAmbulance(j);
             int time = am.getT();
             decreaseTime(patients, time);
-            int run_time = 0;
+            int run_time = time;
             int i = 0;
             for(; i < Ambulance::MAX_PATIENT; i ++){
               int idx = greedyPickPatient(patients, hospitals, am, time);
@@ -577,6 +577,6 @@ int main() {
   }
   KMeansLocateHospitalHelper::locate(patients, hospitals);
   int number = GreedyScheduler::run(patients, hospitals);
-  //std::cout << number << " patients been saved" << std::endl;
+  std::cout << number << " patients been saved" << std::endl;
   return 0;
 }
