@@ -11,6 +11,7 @@
 #include <cassert>
 #include <utility>
 #include <algorithm>
+#include <sstream>
 
 class Direction {
   public:
@@ -85,7 +86,7 @@ class Location {
 };
 
 std::ostream& operator<<(std::ostream& out, const Location & l) {
-  out << l.x << " " << l.y;
+  out << "(" << l.x << "," << l.y << ")";
   return out;
 }
 class Patient {
@@ -99,6 +100,7 @@ class Patient {
     int saved_by;
   public:
     enum State { WAIT, INCAR, DEAD, SAVED};
+    State saved;
     Patient( int x, int y, int t) : l(x, y) {
       time = t;
       current_time = time;
@@ -114,10 +116,10 @@ class Patient {
       id = ID ++;
     }
 
-    State saved;
     inline int getX() const { return l.getX();}
     inline int getY() const { return l.getY();}
     inline int getT() const { return current_time; };
+    inline int getST() const { return time; }
     inline int decreaseT(int t) { current_time -= t;}
     inline void restore() { current_time = time; }
     inline Location getL() const { return l; }
@@ -132,7 +134,10 @@ class Patient {
 
 int Patient::ID = 0;
 std::ostream& operator<< ( std::ostream& out, const Patient & p) {
-  out << "Patient: id = " << p.id << " location = (" << p.l << ") saved by ambulance " << p.saved_by;
+  if( p.isSaved() )
+    out << "Patient: id = " << p.id << " location = " << p.l << " saved by ambulance " << p.saved_by;
+  else
+    out << "Patient: id = " << p.id << " lecation = " << p.l << " group by " << p.group;
   return out;
 }
 
@@ -195,6 +200,8 @@ class Ambulance {
       }
       return s;
     }
+    inline int getID() const { return id; }
+    std::vector<int> getPatientIndex() const { return patient_index; }
 };
 
 int Ambulance::ID = 0;
@@ -304,7 +311,7 @@ class KMeansLocateHospitalHelper {
       for(iter = locs_num.begin(); iter != locs_num.end(); iter++){
         nums[iter->first] = iter->second;
       }
-      return nums
+      return nums;
     }
 
     static bool cluster(std::vector<Patient> &patients, std::vector<Location> & locs, std::vector<int>& weights) {
@@ -319,7 +326,7 @@ class KMeansLocateHospitalHelper {
         float dis = FLT_MAX;
         int g;
         for(int j = 0; j < locs.size(); j ++){
-          float d = l.getD(locs[j]) * 1.0 * weights[j] / sum;
+          float d = l.getD(locs[j]) * 1.0 * sum / weights[j];
           if( d < dis ) {
             dis = d;
             g = j;
@@ -380,23 +387,35 @@ class KMeansLocateHospitalHelper {
             weights.push_back(1);
           }
         }
-
-        cluster(patients, locs, weights);
-        getGravity(patients, locs);
+        while(1) {
+          bool changed = cluster(patients, locs, weights);
+          if( changed == false) break;
+          getGravity(patients, locs);
+        }
       }
-      std::vector<int> nums = getNumPatient(patients);
-
+      /*
       for(int i = 0; i < hospitals.size(); i ++) {
         weights[i] = hospitals[i].getAmbulanceNum();
       }
+      */
       while(1) {
         bool changed = cluster(patients, locs, weights);
         if( changed == false) break;
         getGravity(patients, locs);
       }
+      /*
+      std::vector<int> nums = getNumPatient(patients);
       for(int i = 0; i < num; i ++) {
+        std::cout << locs[i] << "  " <<  nums[i] << std::endl;
+      }
+      */
+      std::cout << "hospitals ";
+      for(int i = 0; i < num; i ++) {
+        //std::cout << locs[i] << "  " <<  nums[i] << std::endl;
+        std::cout << " " << i << " " << locs[i] << ";";
         hospitals[i].setL(locs[i]);
       }
+      std::cout << std::endl;
       return 0;
     }
 };
@@ -412,10 +431,10 @@ class GreedyScheduler{
       int emin = INT_MAX;
       int idx = -1;
       for(int i = 0; i < patients.size(); i ++) {
-        if( patients[i].getG() != am.getHospitalId()) continue;
+        //if( patients[i].getG() != am.getHospitalId()) continue;
         int ss = std::min(patients[i].getT(), stime);
         Location lp = patients[i].getL();
-        if(patients[i].getS() == Patient::WAIT && l.getD(lp)  +  lp.getD(lh) + 1 + am.getPatientNum() + 1 <= ss) {
+        if(patients[i].getS() == Patient::WAIT && l.getD(lp)  +  lp.getD(lh) + 2 <= ss) {
           //int e = l.getD(patients[i].getL()) + patients[i].getT();
           int e = l.getD(lp);
           if( e < emin) {
@@ -424,7 +443,8 @@ class GreedyScheduler{
           }
         }
       }
-      time = l.getD(patients[idx].getL()) + 1;
+      if( idx != -1)
+        time = l.getD(patients[idx].getL()) + 1;
       return idx;
     }
 
@@ -444,6 +464,8 @@ class GreedyScheduler{
     static void restoreTime(std::vector<Patient> & patients) {
       for(int i = 0 ; i < patients.size();i ++) {
         patients[i].restore();
+        if(!patients[i].isSaved()) 
+          patients[i].setS(Patient::WAIT);
       }
     }
     static bool gameover(std::vector<Patient> &patients) {
@@ -459,44 +481,68 @@ class GreedyScheduler{
     }
   public:
     static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
-      //std::sort(hospitals.begin(), hospitals.end(), compare);
-      for(int k = 0; k < hospitals.size() ; k ++ ) {
-        for(int j = 0; j < hospitals[k].getAmbulanceNum() ; j ++ ) {
-          restoreTime(patients);
-          if ( gameover(patients) == true)
-            goto end;
-          Ambulance & am = hospitals[k].getAmbulance(j);
-          int time = am.getT();
-          decreaseTime(patients, time);
-          int run_time = 0;
-          int i = 0;
-          for(; i < Ambulance::MAX_PATIENT; i ++){
-            int idx = greedyPickPatient(patients, hospitals, am, time);
-            if( idx ==  -1) 
-              break;
-            am.load(patients, idx);
-            am.setL(patients[idx].getL());
+      while(1) {
+        for(int k = 0; k < hospitals.size() ; k ++ ) {
+          for(int j = 0; j < hospitals[k].getAmbulanceNum() ; j ++ ) {
+            restoreTime(patients);
+            if ( gameover(patients) == true)
+              goto end;
+            Ambulance & am = hospitals[k].getAmbulance(j);
+            int time = am.getT();
             decreaseTime(patients, time);
-            run_time += time;
+            int run_time = 0;
+            int i = 0;
+            for(; i < Ambulance::MAX_PATIENT; i ++){
+              int idx = greedyPickPatient(patients, hospitals, am, time);
+              if( idx ==  -1) 
+                break;
+              am.load(patients, idx);
+              am.setL(patients[idx].getL());
+              decreaseTime(patients, time);
+              run_time += time;
+            }
+            if( i == 0) continue;
+            std::cout << "ambulance " << am.getID();
+            std::vector<int> idx = am.getPatientIndex();
+            for(int i = 0; i < idx.size(); i ++) {
+              int id = idx[i];
+              //std::cout << " " << id << " (" << patients[id].getG() << "," << patients[id].getX() << "," << patients[id].getY() << "," << patients[id].getST()
+              std::cout << " " << id << " (" << patients[id].getX() << "," << patients[id].getY() << "," << patients[id].getST()
+                        << ");";
+            }
+            time = am.getL().getD(hospitals[0].getL()) + 1;
+            run_time = time;
+            am.setT(run_time);
+            am.unload(patients);
+            am.setL(hospitals[k].getL());
+            std::cout << am.getL() << std::endl;
+            decreaseTime(patients, time);
           }
-          if( i == 0) continue;
-          time = am.getL().getD(hospitals[0].getL());
-          time += am.getPatientNum();
-          run_time += time;
-          am.setT(run_time);
-          am.unload(patients);
-          am.setL(hospitals[k].getL());
-          decreaseTime(patients, time);
         }
       }
 end:
       int count = 0;
+      std::map<int , int> num_dead;
+      num_dead[0] = 0;
+      num_dead[1] = 0;
+      num_dead[2] = 0;
+      num_dead[3] = 0;
+      num_dead[4] = 0;
       for(int i = 0; i < patients.size(); i ++ ) {
+        //std::cout << patients[i] << std::endl;
         if( patients[i].isSaved()) {
-          std::cout << patients[i] << std::endl;
           count ++;
+        } else {
+          num_dead[patients[i].getG()] ++;
         }
       }
+
+      /*
+      std::map<int, int>::iterator iter = num_dead.begin();
+      for(; iter != num_dead.end(); iter ++) {
+        std::cout << iter->first << " " << iter->second << std::endl;
+      }
+      */
       return count;
     }
 };
@@ -523,6 +569,6 @@ int main() {
   }
   KMeansLocateHospitalHelper::locate(patients, hospitals);
   int number = GreedyScheduler::run(patients, hospitals);
-  std::cout << number << " patients been saved" << std::endl;
+  //std::cout << number << " patients been saved" << std::endl;
   return 0;
 }
