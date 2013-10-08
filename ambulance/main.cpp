@@ -482,6 +482,7 @@ class GreedyScheduler{
   public:
     static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
       while(1) {
+        int saved = 0;
         for(int k = 0; k < hospitals.size() ; k ++ ) {
           for(int j = 0; j < hospitals[k].getAmbulanceNum() ; j ++ ) {
             restoreTime(patients);
@@ -496,6 +497,7 @@ class GreedyScheduler{
               int idx = greedyPickPatient(patients, hospitals, am, time);
               if( idx ==  -1) 
                 break;
+              saved = 1;
               am.load(patients, idx);
               am.setL(patients[idx].getL());
               decreaseTime(patients, time);
@@ -519,6 +521,7 @@ class GreedyScheduler{
             decreaseTime(patients, time);
           }
         }
+        if( saved == 0) break;
       }
 end:
       int count = 0;
