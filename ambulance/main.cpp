@@ -512,7 +512,7 @@ class GreedyScheduler{
               std::cout << " " << id << " (" << patients[id].getX() << "," << patients[id].getY() << "," << patients[id].getST()
                         << ");";
             }
-            time = am.getL().getD(hospitals[0].getL()) + 1;
+            time = am.getL().getD(hospitals[k].getL()) + 1;
             run_time = time;
             am.setT(run_time);
             am.unload(patients);
