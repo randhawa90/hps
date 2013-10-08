@@ -118,7 +118,7 @@ class Patient {
     }
     Patient(const Patient & p )
         : l(p.l), time(p.time), current_time(p.current_time),
-        group(p.group), id(p.id), saved_by(p.saved_by)
+        group(p.group), id(p.id), saved_by(p.saved_by), saved(p.saved)
     {
     }
     inline int getX() const { return l.getX();}
@@ -656,9 +656,11 @@ int main() {
   struct timeval tv2;
   gettimeofday(&tv1, NULL);
   std::vector< Location > locs = KMeansLocateHospitalHelper::locate(patients, hospitals);
+  printout_locs(locs);
   //better_locate(patients, hospitals, locs);
   std::vector< std::vector< Location> > retlocs = gen_loc(locs);
   int d = 0;
+  int id = 0;
   std::vector< Location> best_loc;
   for(int i = 0; i < retlocs.size(); i ++) {
     set_locs(hospitals, retlocs[i], 0);
@@ -666,12 +668,14 @@ int main() {
     int number = GreedyScheduler::run(patients, hospitals, 0);
     std::cout << number << " saved" << std::endl;
     if( number > d) {
+        id = i;
         d = number;
         best_loc = retlocs[i];
     }
   }
-  set_locs(hospitals, best_loc, 1);
+  //set_locs(hospitals, best_loc, 1);
   //set_locs(hospitals, locs, 1);
+  set_locs(hospitals, best_loc, 1);
   int number = GreedyScheduler::run(patients, hospitals, 1);
   gettimeofday(&tv2, NULL);
   printf ("Total time = %f seconds\n",
