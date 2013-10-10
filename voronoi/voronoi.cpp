@@ -173,3 +173,50 @@ class Grid {
 };
 
 Grid grid;
+
+
+class GreedyVoronoiMove{
+  private:
+    static int stride;
+  public:
+    static Location move(Grid grid, std::vector<Stone> stone, int color) {
+      int num = 0;
+      int idx_i = 0;
+      int idx_j = 0;
+      for(int i = 0; i < Grid::WIDTH; i += stride ) {
+        for(int j = 0; j < Grid::HEIGHT; j += stride) {
+          std::vector<Stone> pass = stone;
+          Stone s(color, i + stride/2, j + stride/2);
+          pass.push_back(s);
+          grid.setColor(pass);
+          std::map<int, int> ret = grid.getColorDist();
+          if (ret[color] > num) {
+            num = ret[color];
+            idx_i = i;
+            idx_j = j;
+          }
+        }
+      }
+
+      int fidx_i = idx_i;
+      int fidx_j = idx_j;
+      for(int i = idx_i; i < idx_i + stride;  i ++) {
+        for(int j = idx_j; j < idx_j + stride; j ++ ) {
+          Stone s(color, i, j);
+          std::vector<Stone> pass = stone;
+          pass.push_back(s);
+          grid.setColor(pass);
+          std::map<int, int> ret = grid.getColorDist();
+          if (ret[color] > num) {
+            num = ret[color];
+            fidx_i = i;
+            fidx_j = j;
+          }
+        }
+      }
+      Location l(fidx_i, fidx_j);
+      return l;
+    }
+};
+
+int GreedyVoronoiMove::stride = 40;
