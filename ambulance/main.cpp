@@ -12,6 +12,7 @@
 #include <utility>
 #include <algorithm>
 #include <sstream>
+#include <sys/time.h>
 
 class Direction {
   public:
@@ -115,7 +116,11 @@ class Patient {
       saved = WAIT;
       id = ID ++;
     }
-
+    Patient(const Patient & p )
+        : l(p.l), time(p.time), current_time(p.current_time),
+        group(p.group), id(p.id), saved_by(p.saved_by), saved(p.saved)
+    {
+    }
     inline int getX() const { return l.getX();}
     inline int getY() const { return l.getY();}
     inline int getT() const { return current_time; };
@@ -162,6 +167,7 @@ class Ambulance {
       num = 0;
     }
     Ambulance(const Ambulance& a ) {
+      l = a.l;
       hospital = a.hospital;
       id = a.id;
       current_time = a.current_time;
@@ -214,6 +220,11 @@ class Hospital{
       for(int i = 0; i < num; i++ ){
         ambulances.push_back(Ambulance(id));
       }
+    }
+
+    Hospital(const Hospital & h)
+        :l( h.l ), nam(h.nam), id(h.id), ambulances(h.ambulances)
+    {
     }
     inline void setL(Location loc ) {
       l = loc;
@@ -340,7 +351,7 @@ class KMeansLocateHospitalHelper {
     }
 
   public:
-    static float locate(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
+    static std::vector<Location> locate(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
       int num = hospitals.size();
       std::vector<Location> locs;
       locs.push_back(Location());
@@ -401,20 +412,7 @@ class KMeansLocateHospitalHelper {
         if( changed == false) break;
         getGravity(patients, locs);
       }
-      /*
-      std::vector<int> nums = getNumPatient(patients);
-      for(int i = 0; i < num; i ++) {
-        std::cout << locs[i] << "  " <<  nums[i] << std::endl;
-      }
-      */
-      std::cout << "hospitals ";
-      for(int i = 0; i < num; i ++) {
-        //std::cout << locs[i] << "  " <<  nums[i] << std::endl;
-        std::cout << " " << i << " " << locs[i] << ";";
-        hospitals[i].setL(locs[i]);
-      }
-      std::cout << std::endl;
-      return 0;
+      return locs;
     }
 };
 
@@ -479,7 +477,7 @@ class GreedyScheduler{
       return h1.compare(h2);
     }
   public:
-    static int run(std::vector<Patient> & patients, std::vector<Hospital> & hospitals) {
+    static int run(std::vector<Patient> patients, std::vector<Hospital> hospitals, int verbose) {
       int count = 0;
       while(1) {
         int saved = 0;
@@ -505,12 +503,14 @@ class GreedyScheduler{
             }
             if( i == 0) continue;
             count += i;
-            std::cout << "ambulance " << am.getID();
+            if( verbose == 1) 
+                std::cout << "ambulance " << am.getID();
             std::vector<int> idxs = am.getPatientIndex();
             for(int i = 0; i < idxs.size(); i ++) {
               int id = idxs[i];
               //std::cout << " " << id << " (" << patients[id].getG() << "," << patients[id].getX() << "," << patients[id].getY() << "," << patients[id].getST()
-              std::cout << " " << id << " (" << patients[id].getX() << "," << patients[id].getY() << "," << patients[id].getST()
+              if( verbose == 1) 
+                std::cout << " " << id << " (" << patients[id].getX() << "," << patients[id].getY() << "," << patients[id].getST()
                         << ");";
             }
             int idx = idxs.back();
@@ -521,7 +521,8 @@ class GreedyScheduler{
             am.setT(run_time);
             am.unload(patients);
             am.setL(hl);
-            std::cout << am.getL() << std::endl;
+            if( verbose)
+                std::cout << am.getL() << std::endl;
             decreaseTime(patients, time);
           }
         }
@@ -554,6 +555,82 @@ end:
     }
 };
 
+void better_locate(std::vector<Patient> & patients, std::vector<Hospital> & hospitals, std::vector<Location> &locs){
+    std::cout << "hospitals ";
+    for(int i = 0; i < locs.size(); i ++ ){
+        int d = INT_MAX;
+        int idx;
+        Location ll = locs[i];
+        for(int j = 0; j < patients.size(); j ++) {
+            int e = patients[j].getL().getD(ll);
+            if( e < d) {
+                d = e; idx = j;
+            }
+        }
+        hospitals[i].setL(patients[idx].getL());
+        std::cout << " " << i << " " << patients[idx].getL() << ";";
+    }
+    std::cout << std::endl;
+}
+
+std::vector< std::vector<Location> > gen_loc(std::vector<Location> & locs) {
+    std::vector< std::vector< Location> > multlocs;
+    for(int i = 0; i < locs.size(); i++){
+        std::vector< Location > lls;
+        Location l = locs[i];
+        lls.push_back(l.move(0, -1));
+        lls.push_back(l.move(0, 1));
+        lls.push_back(l.move(1, 0));
+        lls.push_back(l.move(-1, 0));
+        lls.push_back(l.move(0, 0));
+        
+        multlocs.push_back(lls);
+    }
+    std::vector< std::vector< Location> > retlocs;
+    std::vector<Location> slocs;
+    for(int a = 0; a < 5; a ++) {
+        slocs.push_back(multlocs[0][a]);
+        for(int b = 0; b < 5; b++ ){
+            slocs.push_back(multlocs[1][b]);
+            for(int c = 0; c < 5; c++ ){
+                slocs.push_back(multlocs[2][c]);
+                for(int d = 0; d < 5; d++ ){
+                    slocs.push_back(multlocs[3][d]);
+                    for(int e = 0; e < 5; e++ ){
+                        slocs.push_back(multlocs[4][e]);
+                        retlocs.push_back(slocs);
+                        slocs.pop_back();
+                    }
+                    slocs.pop_back();
+                }
+                slocs.pop_back();
+            }
+            slocs.pop_back();
+       }
+        slocs.pop_back();
+    }
+    assert(retlocs.size() == 3125);
+    return retlocs;
+}
+
+void set_locs(std::vector<Hospital> & hospitals, std::vector< Location > & locs, int verbose) {
+    if( verbose)
+        std::cout << "hospitals ";
+    for(int i = 0; i< locs.size(); i ++) {
+        hospitals[i].setL(locs[i]);
+        if( verbose)
+            std::cout << " " << i << " " << hospitals[i].getL() << ";";
+    }
+    if( verbose)
+        std::cout << std::endl;
+}
+
+void printout_locs(std::vector<Location> locs){
+    for(int i = 0; i< locs.size(); i ++) {
+        std::cout << locs[i] << std::endl;
+    }
+}
+
 int main() {
   std::string file = "test";
   std::ifstream ifs(file.c_str());
@@ -574,8 +651,35 @@ int main() {
     Hospital h(nam, i);
     hospitals.push_back(h);
   }
-  KMeansLocateHospitalHelper::locate(patients, hospitals);
-  int number = GreedyScheduler::run(patients, hospitals);
-  std::cout << number << " patients been saved" << std::endl;
+  struct timeval tv1;
+  struct timeval tv2;
+  gettimeofday(&tv1, NULL);
+  std::vector< Location > locs = KMeansLocateHospitalHelper::locate(patients, hospitals);
+  printout_locs(locs);
+  //better_locate(patients, hospitals, locs);
+  std::vector< std::vector< Location> > retlocs = gen_loc(locs);
+  int d = 0;
+  int id = 0;
+  std::vector< Location> best_loc;
+  for(int i = 0; i < retlocs.size(); i ++) {
+    set_locs(hospitals, retlocs[i], 0);
+    printout_locs(retlocs[i]); 
+    int number = GreedyScheduler::run(patients, hospitals, 0);
+    std::cout << number << " saved" << std::endl;
+    if( number > d) {
+        id = i;
+        d = number;
+        best_loc = retlocs[i];
+    }
+  }
+  //set_locs(hospitals, best_loc, 1);
+  //set_locs(hospitals, locs, 1);
+  set_locs(hospitals, best_loc, 1);
+  int number = GreedyScheduler::run(patients, hospitals, 1);
+  gettimeofday(&tv2, NULL);
+  printf ("Total time = %f seconds\n",
+           (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+           (double) (tv2.tv_sec - tv1.tv_sec));
+  //std::cout << number << " patients been saved" << std::endl;
   return 0;
 }
