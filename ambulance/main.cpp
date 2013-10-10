@@ -404,7 +404,6 @@ class KMeansLocateHospitalHelper {
           getGravity(patients, locs);
         }
       }
-      
       for(int i = 0; i < hospitals.size(); i ++) {
         weights[i] = hospitals[i].getAmbulanceNum();
       }
