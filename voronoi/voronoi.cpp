@@ -63,8 +63,10 @@ class Grid {
     static const int HEIGHT = 1000;
 
     Grid() {
+      stride = 40;
     }
     Grid(std::vector<Stone> & stones) {
+      stride = 40;
       setColor(stones);
     }
 
@@ -88,33 +90,86 @@ class Grid {
             stoneset[c].push_back(stones[i]);
           }
         }
-        for(int i = 0; i < WIDTH; i ++ ){
-          for(int  j =0; j < HEIGHT; j ++ ){
-            Location l(i, j);
-            float pull = FLT_MAX;
-            int c;
-            std::map<int , std::vector<Stone> >::iterator iter = stoneset.begin();
-            for(; iter != stoneset.end(); iter ++){
-              int sum = 0;
-              for(int m = 0; m < iter->second.size(); m ++) {
-                sum += 1.0 / l.getDS((iter->second)[m].l)
-              }
-              if( pull > sum){
-                pull  = sum;
-                c = iter->first;
+        for(int i = 0; i < WIDTH; i += stride ){
+          for(int  j = 0; j < HEIGHT; j += stride ){
+            std::vector<Location> locs;
+            locs.push_back(Location(i, j));
+            locs.push_back(Location(i+stride-1, j));
+            locs.push_back(Location(i, j+stride -1));
+            locs.push_back(Location(i+ stride - 1, j+stride - 1));
+            locs.push_back(Location(i + stride / 2, j + stride / 2));
+            std::vector<int> colors;
+            for(int n = 0; n < locs.size(); n ++) {
+              Location l = locs[n];
+              int c = _setcolor(l, stoneset);
+              board[l.getX()][l.getY()] = c;
+              colors.push_back(c);
+            }
+
+            int flag = 1;
+            for(int n = 1; n < colors.size(); n ++) {
+              if(colors[n] != colors[n - 1] ) {
+                flag = 0;
+                break;
               }
             }
-            board[i][j] = c;
+            if( flag == 1) {
+              int color = colors[0];
+              for(int m = i; m < i + stride; m ++ ){
+                for(int n = j; n < j + stride; n ++) {
+                  board[m][n] = color;
+                }
+              }
+            }else {
+              for(int m = i; m < i + stride; m ++) {
+                for(int n = j; n < j + stride; n ++) {
+                  Location l(m, n);
+                  int c = _setcolor(l, stoneset);
+                  board[l.getX()][l.getY()] = c;
+                }
+              }
+            }
           }
         }
       }
     }
-
     int getColor(int i, int j ) {
       return board[i][j];
     }
+
+
+    std::map<int, int> getColorDist() {
+      std::map< int, int> ret;
+      for(int i = 0; i < WIDTH; i ++ ) {
+        for(int j = 0; j < HEIGHT; j ++ ) {
+          int c = board[i][j];
+          if( ret.find(c) == ret.end() ) {
+            ret[c] = 0;
+          }
+          ret[c] ++;
+        }
+      }
+      return ret;
+    }
   private:
+    int _setcolor(Location l, std::map<int, std::vector<Stone> > & stoneset) {
+      float pull = 0.0;
+      int c;
+      std::map<int , std::vector<Stone> >::iterator iter = stoneset.begin();
+      for(; iter != stoneset.end(); iter ++){
+        int sum = 0;
+        for(int m = 0; m < iter->second.size(); m ++) {
+          sum += 1.0 / l.getDS((iter->second)[m].l)
+        }
+        if( pull < sum){
+          pull  = sum;
+          c = iter->first;
+        }
+      }
+      return c;
+    }
     int board[WIDTH][HEIGHT];
+    int stride;
 };
 
 Grid grid;
