@@ -4,6 +4,7 @@
 #include <string.h>
 #include <cassert>
 #include <vector>
+#include <vector>
 #include <map>
 #include <cfloat>
 #include <iostream>
@@ -167,10 +168,14 @@ class Grid {
       int i = start_i;
       int j = start_j;
       locs.push_back(Location(i, j));
-      locs.push_back(Location(i+stride-1, j));
-      locs.push_back(Location(i, j+stride -1));
-      locs.push_back(Location(i+ stride - 1, j+stride - 1));
-      locs.push_back(Location(i + stride / 2, j + stride / 2));
+      if( i + stride -1 < WIDTH)
+        locs.push_back(Location(i+stride-1, j));
+      if( j + stride -1 < HEIGHT)
+        locs.push_back(Location(i, j+stride -1));
+      if( i + stride -1 < WIDTH && j + stride -1 < HEIGHT)
+        locs.push_back(Location(i+ stride - 1, j+stride - 1));
+      if( i + stride/2 < WIDTH && j + stride/2 < HEIGHT)
+        locs.push_back(Location(i + stride / 2, j + stride / 2));
       return locs;
     }
 
@@ -185,8 +190,8 @@ class Grid {
     }
 
     void _setPatchColorSingle(int start_i, int start_j, int width, int height, int c) {
-      for(int i = start_i; i < start_i + width; i ++) {
-        for(int j = start_j; j < start_j + height; j ++){
+      for(int i = start_i; i < start_i + width && i < WIDTH; i ++) {
+        for(int j = start_j; j < start_j + height && j < HEIGHT; j ++){
           board[i][j] = c;
         }
       }
@@ -194,8 +199,8 @@ class Grid {
 
     void _setPatchColor(int start_i, int start_j, int width, int height,
         std::map<int, std::vector<Stone> > & stoneset ) {
-      for(int i = start_i; i < start_i + width; i ++ ) {
-        for(int j = start_j; j < start_j + height; j ++ ) {
+      for(int i = start_i; i < start_i + width && i < WIDTH; i ++ ) {
+        for(int j = start_j; j < start_j + height && j < HEIGHT; j ++ ) {
             Location l(i, j);
             int c = _setcolor(l, stoneset);
             board[i][j] = c;
@@ -237,10 +242,11 @@ class GreedyVoronoiMove{
 
     static std::vector<Stone> getOtherStones( std::map<int, std::vector<Stone> > stoneset, int color) {
       std::vector< Stone > stones;
-      for(int i = 0; i < stoneset.size() ; i ++ ) {
-        if( i != color ) {
-          for(int j = 0; j < stoneset[i].size(); i ++ ) {
-            stones.push_back(stoneset[i][j]);
+      std::map<int, std::vector<Stone> >::iterator iter = stoneset.begin();
+      for(; iter != stoneset.end(); iter ++) {
+        if( iter->first != color ) {
+          for(int j = 0; j < iter->second.size(); j ++ ) {
+            stones.push_back(iter->second[j]);
           }
         }
       }
@@ -262,7 +268,6 @@ class GreedyVoronoiMove{
 
       //std::vector<Location> locs = getAllTile(Grid::WIDTH, Grid::HEIGHT);
       std::vector<Location> locs = getStoneTile(onestones, grid);
-      //std::cout << "The size of locs is " << locs.size() << std::endl;
       /*
       for(int n = 0; n < locs.size() ; n ++ ) {
         int i = locs[n].getX();
@@ -285,9 +290,10 @@ class GreedyVoronoiMove{
 
       int fidx_i = idx_i;
       int fidx_j = idx_j;
-      for(int n = 0; n < locs.size(); n ++ ) {
-        int idx_i = locs[n].getX();
-        int idx_j = locs[n].getY();
+      std::vector<Location>::iterator iter = locs.begin();
+      for(; iter != locs.end(); iter ++) {
+        int idx_i = iter->getX();
+        int idx_j = iter->getY();
         for(int i = idx_i; i < idx_i + stride;  i ++) {
           for(int j = idx_j; j < idx_j + stride; j ++ ) {
             Location tmp(i, j);
@@ -458,10 +464,10 @@ int main(int argc, char ** argv) {
   Location l = GreedyVoronoiMove::move(grid, stones, color); 
   //Location l = SymmetricMove::move(grid, stones, color);
 
-  //gettimeofday(&tv2, NULL);
-  //printf ("Total time = %f seconds\n",
-  //         (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
-  //         (double) (tv2.tv_sec - tv1.tv_sec));
+  gettimeofday(&tv2, NULL);
+  printf ("Total time = %f seconds\n",
+           (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+           (double) (tv2.tv_sec - tv1.tv_sec));
   std::cout << l.getX() << " " << l.getY() << std::endl;
   return 0;
 }
