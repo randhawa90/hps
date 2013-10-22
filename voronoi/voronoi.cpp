@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cassert>
 #include <vector>
 #include <map>
 #include <cfloat>
@@ -41,6 +42,10 @@ class Location {
     }
     inline void reset() { x = 0; y = 0; }
     friend std::ostream& operator<< ( std::ostream& out, const Location& l);
+
+    bool operator==(const Location & o) {
+      return o.x == x && o.y == y;
+    }
 };
 
 std::ostream& operator<<(std::ostream& out, const Location & l) {
@@ -62,6 +67,22 @@ struct Stone{
   Location l;
 };
 
+
+std::map<int, std::vector<Stone> > splitStone(std::vector<Stone> stones) {
+  std::map<int, std::vector<Stone> > stoneset;
+  for(int i = 0; i < stones.size(); i ++){
+    int c = stones[i].color;
+    if( stoneset.find(c) == stoneset.end()) {
+      std::vector<Stone> sset;
+      sset.push_back(stones[i]);
+      stoneset[c] = sset;
+    }else {
+      stoneset[c].push_back(stones[i]);
+    }
+  }
+  return stoneset;
+}
+
 class Grid {
   public:
     static const int WIDTH = 1000;
@@ -75,6 +96,12 @@ class Grid {
       setColor(stones);
     }
 
+    Location getTile(Location l) {
+      int x = l.getX();
+      int y = l.getY();
+
+      return Location(x/stride*stride , y/stride*stride);
+    }
 
     Location center() {
       return Location(WIDTH/2, HEIGHT/2);
@@ -84,17 +111,7 @@ class Grid {
         int c = stones[0].color;
         _setPatchColorSingle(0, 0, WIDTH, HEIGHT, c);
       }else {
-        std::map<int, std::vector<Stone> > stoneset;
-        for(int i = 0; i < stones.size(); i ++){
-          int c = stones[i].color;
-          if( stoneset.find(c) == stoneset.end()) {
-            std::vector<Stone> sset;
-            sset.push_back(stones[i]);
-            stoneset[c] = sset;
-          }else {
-            stoneset[c].push_back(stones[i]);
-          }
-        }
+        std::map<int, std::vector<Stone> > stoneset = splitStone(stones);
         for(int i = 0; i < WIDTH; i += stride ){
           for(int  j = 0; j < HEIGHT; j += stride ){
             std::vector<Location> locs = getMark(i, j);
@@ -202,6 +219,24 @@ Grid grid;
 class GreedyVoronoiMove{
   private:
     static int stride;
+    static std::vector<Location> getAllTile(int width, int height) {
+      std::vector<Location> locs;
+      for(int i = 0; i < Grid::WIDTH; i += stride ) {
+        for(int j = 0; j < Grid::HEIGHT; j += stride) {
+          locs.push_back(Location(i, j));
+        }
+      }
+      return locs;
+    }
+
+    static std::vector<Location> getStoneTile(std::vector<Stone> & stones, Grid grid) {
+      std::vector<Location> locs;
+      for(int i = 0; i < stones.size(); i ++ ) {
+        locs.push_back(grid.getTile(stones[i].l));
+      }
+      return locs;
+    }
+
   public:
     static Location move(Grid grid, std::vector<Stone> stone, int color) {
       int num = 0;
@@ -211,19 +246,30 @@ class GreedyVoronoiMove{
       if (stone.size() == 0 ) {
         return grid.center();
       }
-      for(int i = 0; i < Grid::WIDTH; i += stride ) {
-        for(int j = 0; j < Grid::HEIGHT; j += stride) {
-          std::vector<Stone> pass = stone;
-          Stone s(color, i + stride/2, j + stride/2);
-          //std::cout << s.l << std::endl;
-          pass.push_back(s);
-          grid.setColor(pass);
-          std::map<int, int> ret = grid.getColorDist();
-          if (ret[color] > num) {
-            num = ret[color];
-            idx_i = i;
-            idx_j = j;
-          }
+      std::map<int, std::vector<Stone> > stoneset = splitStone(stone);
+      std::vector<Stone> onestones;
+
+      if(color == 1) {
+        onestones = stoneset[2];
+      }else {
+        onestones = stoneset[1];
+      }
+
+      //std::vector<Location> locs = getAllTile(Grid::WIDTH, Grid::HEIGHT);
+      std::vector<Location> locs = getStoneTile(onestones, grid);
+      for(int n = 0; n < locs.size() ; n ++ ) {
+        int i = locs[n].getX();
+        int j = locs[n].getY();
+        std::vector<Stone> pass = stone;
+        Stone s(color, i + stride/2, j + stride/2);
+        //std::cout << s.l << std::endl;
+        pass.push_back(s);
+        grid.setColor(pass);
+        std::map<int, int> ret = grid.getColorDist();
+        if (ret[color] > num) {
+          num = ret[color];
+          idx_i = i;
+          idx_j = j;
         }
       }
 
@@ -249,6 +295,84 @@ class GreedyVoronoiMove{
 };
 
 int GreedyVoronoiMove::stride = 40;
+
+
+class ReversedMove {
+  public:
+    static Location move(Grid, std::vector<Stone> stones, int color ) {
+      std::map<int, std::vector<Stone> > stoneset = splitStone(stones);
+      Location l = findReversedLocation(stoneset, Grid::WIDTH, Grid::HEIGHT, color);
+      return l;
+    }
+
+  private:
+    static Location findReversedLocation(std::map<int, std::vector<Stone> >& stoneset , int width, int height, int color) {
+      //assert(stoneset.size() == 2);
+      assert(color == 2);
+      std::vector<Stone> & firststones = stoneset[1];
+      std::vector<Stone> & secondstones = stoneset[2];
+
+      for(int i = 0; i < firststones.size(); i ++ ) {
+        Location l = makeReversed(firststones[i].l, width, height);
+        int j;
+        for(j = 0; j < secondstones.size(); j ++ ) {
+          if (secondstones[j].l == l)
+            break;
+        }
+        if( j ==  secondstones.size()) {
+          return l;
+        }
+      }
+    }
+
+    static Location makeReversed(Location l, int width, int height) {
+      Location r(width - l.getX(), height - l.getY());
+      if ( r == l) {
+        return Location(0, 0);
+      }else {
+        return r;
+      }
+    }
+};
+
+class SymmetricMove {
+  public:
+    static Location move(Grid, std::vector<Stone> stones, int color ) {
+      std::map<int, std::vector<Stone> > stoneset = splitStone(stones);
+      Location l = findSymmetricLocation(stoneset, Grid::WIDTH, Grid::HEIGHT, color);
+      return l;
+    }
+
+  private:
+    static Location findSymmetricLocation(std::map<int, std::vector<Stone> >& stoneset , int width, int height, int color) {
+      //assert(stoneset.size() == 2);
+      assert(color == 2);
+      std::vector<Stone> & firststones = stoneset[1];
+      std::vector<Stone> & secondstones = stoneset[2];
+
+      for(int i = 0; i < firststones.size(); i ++ ) {
+        Location l = makeSymmetric(firststones[i].l, width, height);
+        int j;
+        for(j = 0; j < secondstones.size(); j ++ ) {
+          if (secondstones[j].l == l)
+            break;
+        }
+        if( j ==  secondstones.size()) {
+          return l;
+        }
+      }
+    }
+
+    static Location makeSymmetric(Location l, int width, int height) {
+      Location r(l.getY(), l.getX());
+      if ( r == l) {
+        return Location(0, 0);
+      }else {
+        return r;
+      }
+    }
+};
+
 
 
 int fpeek(FILE* fin) {
@@ -281,7 +405,6 @@ int main(int argc, char ** argv) {
     if ( n != 3) {
       break;
     }
-    printf("%d, %d, %d\n", c, x, y);
     stones.push_back(Stone(c, x, y));
     n = fgetc(fin);
     if( n !=  ',') {
@@ -295,7 +418,6 @@ int main(int argc, char ** argv) {
     if( n != 2 ) {
       break;
     }
-    printf("%d, %d\n", c, x);
     areas[c] = x;
     n = fgetc(fin);
     if( n != ',') {
@@ -308,15 +430,12 @@ int main(int argc, char ** argv) {
   struct timeval tv2;
   gettimeofday(&tv1, NULL);
   Location l = GreedyVoronoiMove::move(grid, stones, color); 
-  stones.push_back(Stone(color, l.getX(), l.getY()));
-  grid.setColor(stones);
-  dist = grid.getColorDist();
-  std::cout << dist[1] << " " << dist[2] << std::endl;
-  gettimeofday(&tv2, NULL);
-  printf ("Total time = %f seconds\n",
-           (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
-           (double) (tv2.tv_sec - tv1.tv_sec));
-  std::cout << "(" << color << "," << l.getX() << "," << l.getY() << ")" << std::endl;
+  //Location l = SymmetricMove::move(grid, stones, color);
+
+  //gettimeofday(&tv2, NULL);
+  //printf ("Total time = %f seconds\n",
+  //         (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+  //         (double) (tv2.tv_sec - tv1.tv_sec));
+  std::cout << l.getX() << " " << l.getY() << std::endl;
   return 0;
-  
 }

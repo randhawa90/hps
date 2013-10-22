@@ -71,8 +71,8 @@ class State:
             self.timeleft=float(line1[1])
         self.parsemoves(state[1])
         self.parseareas(state[2])
-        self.calcareas()
-        print "Areas check -- "+ ' | '.join(["%d:(%d/%d)"%(i,self.areas[i],self.myareas[i]) for i in range(1,self.noplayers+1)])
+        #self.calcareas()
+        #print "Areas check -- "+ ' | '.join(["%d:(%d/%d)"%(i,self.areas[i],self.myareas[i]) for i in range(1,self.noplayers+1)])
     
     def parsemoves(self,movestr):
         self.moves=[[] for i in range(0,self.noplayers+1)]
@@ -149,8 +149,11 @@ if __name__=="__main__":
                     command = './illuminati %d' % pid
                     pipe = Popen(command.split(), stdin = PIPE, stdout = PIPE)
                     statestr = '\n'.join(statestr.split('\n')[1:])
-                    pipe.stdin.write(statestr)
-                    pid, x, y = pipe.stdout.read()
+                    print statestr
+                    str = pipe.communicate(input = statestr)[0]
+                    pipe.wait()
+                    print str
+                    x, y = [int(a) for a in str.split()]
                     #makemove(s,pid,mymoves[turn],mymoves[turn])
                     makemove(s, pid, x, y)
         state.parsestate(readsocket(s))
