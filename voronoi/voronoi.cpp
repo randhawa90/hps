@@ -6,6 +6,7 @@
 #include <map>
 #include <cfloat>
 #include <iostream>
+#include <sys/time.h>
 
 class Location {
   private:
@@ -81,11 +82,7 @@ class Grid {
     void setColor(std::vector<Stone> & stones) {
       if ( stones.size() == 1) {
         int c = stones[0].color;
-        for(int i = 0; i < WIDTH; i ++) {
-          for(int j = 0; j < HEIGHT; j ++){
-            board[i][j] = c;
-          }
-        }
+        _setPatchColorSingle(0, 0, WIDTH, HEIGHT, c);
       }else {
         std::map<int, std::vector<Stone> > stoneset;
         for(int i = 0; i < stones.size(); i ++){
@@ -100,42 +97,18 @@ class Grid {
         }
         for(int i = 0; i < WIDTH; i += stride ){
           for(int  j = 0; j < HEIGHT; j += stride ){
-            std::vector<Location> locs;
-            locs.push_back(Location(i, j));
-            locs.push_back(Location(i+stride-1, j));
-            locs.push_back(Location(i, j+stride -1));
-            locs.push_back(Location(i+ stride - 1, j+stride - 1));
-            locs.push_back(Location(i + stride / 2, j + stride / 2));
+            std::vector<Location> locs = getMark(i, j);
             std::vector<int> colors;
             for(int n = 0; n < locs.size(); n ++) {
               Location l = locs[n];
               int c = _setcolor(l, stoneset);
-              board[l.getX()][l.getY()] = c;
               colors.push_back(c);
             }
 
-            int flag = 1;
-            for(int n = 1; n < colors.size(); n ++) {
-              if(colors[n] != colors[n - 1] ) {
-                flag = 0;
-                break;
-              }
-            }
-            if( flag == 1) {
-              int color = colors[0];
-              for(int m = i; m < i + stride; m ++ ){
-                for(int n = j; n < j + stride; n ++) {
-                  board[m][n] = color;
-                }
-              }
+            if( isIdentical(colors)) {
+              _setPatchColorSingle(i, j, stride, stride, colors[0]);
             }else {
-              for(int m = i; m < i + stride; m ++) {
-                for(int n = j; n < j + stride; n ++) {
-                  Location l(m, n);
-                  int c = _setcolor(l, stoneset);
-                  board[l.getX()][l.getY()] = c;
-                }
-              }
+              _setPatchColor(i, j, stride, stride, stoneset);
             }
           }
         }
@@ -161,13 +134,13 @@ class Grid {
     }
   private:
     int _setcolor(Location l, std::map<int, std::vector<Stone> > & stoneset) {
-      float pull = 0.0;
-      int c;
+      double pull = 0.0;
+      int c = 1;
       std::map<int , std::vector<Stone> >::iterator iter = stoneset.begin();
       for(; iter != stoneset.end(); iter ++){
-        int sum = 0;
+        double sum = 0;
         for(int m = 0; m < iter->second.size(); m ++) {
-          sum += 1.0 / l.getDS((iter->second)[m].l);
+          sum += 1.0l / l.getDS((iter->second)[m].l);
         }
         if( pull < sum){
           pull  = sum;
@@ -175,6 +148,49 @@ class Grid {
         }
       }
       return c;
+    }
+
+
+    std::vector<Location> getMark(int start_i, int start_j) {
+      std::vector<Location> locs;
+      int i = start_i;
+      int j = start_j;
+      locs.push_back(Location(i, j));
+      locs.push_back(Location(i+stride-1, j));
+      locs.push_back(Location(i, j+stride -1));
+      locs.push_back(Location(i+ stride - 1, j+stride - 1));
+      locs.push_back(Location(i + stride / 2, j + stride / 2));
+      return locs;
+    }
+
+
+    bool isIdentical(std::vector<int> &colors) const {
+      for(int n = 1; n < colors.size(); n ++) {
+        if(colors[n] != colors[n - 1] ) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    void _setPatchColorSingle(int start_i, int start_j, int width, int height, int c) {
+      for(int i = start_i; i < start_i + width; i ++) {
+        for(int j = start_j; j < start_j + height; j ++){
+          board[i][j] = c;
+        }
+      }
+    }
+
+    void _setPatchColor(int start_i, int start_j, int width, int height,
+        std::map<int, std::vector<Stone> > & stoneset ) {
+      for(int i = start_i; i < start_i + width; i ++ ) {
+        for(int j = start_j; j < start_j + height; j ++ ) {
+            Location l(i, j);
+            int c = _setcolor(l, stoneset);
+            board[i][j] = c;
+        }
+      }
+
     }
     int board[WIDTH][HEIGHT];
     int stride;
@@ -199,6 +215,7 @@ class GreedyVoronoiMove{
         for(int j = 0; j < Grid::HEIGHT; j += stride) {
           std::vector<Stone> pass = stone;
           Stone s(color, i + stride/2, j + stride/2);
+          //std::cout << s.l << std::endl;
           pass.push_back(s);
           grid.setColor(pass);
           std::map<int, int> ret = grid.getColorDist();
@@ -280,14 +297,25 @@ int main(int argc, char ** argv) {
     }
     printf("%d, %d\n", c, x);
     areas[c] = x;
-    n = fpeek(fin);
+    n = fgetc(fin);
     if( n != ',') {
       break;
     }
   }
   grid.setColor(stones);
   std::map<int, int> dist = grid.getColorDist(); 
+  struct timeval tv1;
+  struct timeval tv2;
+  gettimeofday(&tv1, NULL);
   Location l = GreedyVoronoiMove::move(grid, stones, color); 
+  stones.push_back(Stone(color, l.getX(), l.getY()));
+  grid.setColor(stones);
+  dist = grid.getColorDist();
+  std::cout << dist[1] << " " << dist[2] << std::endl;
+  gettimeofday(&tv2, NULL);
+  printf ("Total time = %f seconds\n",
+           (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+           (double) (tv2.tv_sec - tv1.tv_sec));
   std::cout << "(" << color << "," << l.getX() << "," << l.getY() << ")" << std::endl;
   return 0;
   
