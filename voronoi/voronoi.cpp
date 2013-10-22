@@ -74,6 +74,10 @@ class Grid {
       setColor(stones);
     }
 
+
+    Location center() {
+      return Location(WIDTH/2, HEIGHT/2);
+    }
     void setColor(std::vector<Stone> & stones) {
       if ( stones.size() == 1) {
         int c = stones[0].color;
@@ -187,6 +191,10 @@ class GreedyVoronoiMove{
       int num = 0;
       int idx_i = 0;
       int idx_j = 0;
+
+      if (stone.size() == 0 ) {
+        return grid.center();
+      }
       for(int i = 0; i < Grid::WIDTH; i += stride ) {
         for(int j = 0; j < Grid::HEIGHT; j += stride) {
           std::vector<Stone> pass = stone;
@@ -252,28 +260,33 @@ int main(int argc, char ** argv) {
   std::vector<Stone> stones;
   int c, x, y;
   while( 1 ) {
-    fscanf(fin, "(%d,%d,%d)", &c, &x, &y);
+    int n = fscanf(fin, "(%d,%d,%d)", &c, &x, &y);
+    if ( n != 3) {
+      break;
+    }
     printf("%d, %d, %d\n", c, x, y);
     stones.push_back(Stone(c, x, y));
-    if( fpeek(fin) != ',') {
+    n = fgetc(fin);
+    if( n !=  ',') {
       break;
-    }else {
-      fgetc(fin);
     }
   }
 
   std::map<int, int> areas;
   while(1) {
-    fscanf(fin, "(%d,%d)", &c, &x);
+    int n = fscanf(fin, "(%d,%d)", &c, &x);
+    if( n != 2 ) {
+      break;
+    }
     printf("%d, %d\n", c, x);
     areas[c] = x;
-    if( fpeek(fin) != ',') {
+    n = fpeek(fin);
+    if( n != ',') {
       break;
-    }else {
-      fgetc(fin);
     }
   }
-
+  grid.setColor(stones);
+  std::map<int, int> dist = grid.getColorDist(); 
   Location l = GreedyVoronoiMove::move(grid, stones, color); 
   std::cout << "(" << color << "," << l.getX() << "," << l.getY() << ")" << std::endl;
   return 0;
