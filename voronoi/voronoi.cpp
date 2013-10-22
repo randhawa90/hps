@@ -252,6 +252,16 @@ class GreedyVoronoiMove{
       }
       return stones;
     }
+    static std::vector<Stone> getOtherLastStones( std::map<int, std::vector<Stone> > stoneset, int color) {
+      std::vector< Stone > stones;
+      std::map<int, std::vector<Stone> >::iterator iter = stoneset.begin();
+      for(; iter != stoneset.end(); iter ++) {
+        if( iter->first != color ) {
+          stones.push_back(iter->second.back());
+        }
+      }
+      return stones;
+    }
   public:
     static Location move(Grid grid, std::vector<Stone> stone, int color) {
       int num = 0;
@@ -262,7 +272,8 @@ class GreedyVoronoiMove{
         return grid.center();
       }
       std::map<int, std::vector<Stone> > stoneset = splitStone(stone);
-      std::vector<Stone> onestones = getOtherStones(stoneset, color);
+      //std::vector<Stone> onestones = getOtherStones(stoneset, color);
+      std::vector<Stone> onestones = getOtherLastStones(stoneset, color);
       //std::cout << "The size of onstones is " << onestones.size() << std::endl;
 
 
@@ -454,20 +465,20 @@ int main(int argc, char ** argv) {
       break;
     }
   }
-  grid.setColor(stones);
-  std::map<int, int> dist = grid.getColorDist(); 
+  //grid.setColor(stones);
+  //std::map<int, int> dist = grid.getColorDist(); 
   //std::cout << dist[1] << " " << dist[2] << std::endl;
   //return 0;
-  struct timeval tv1;
-  struct timeval tv2;
-  gettimeofday(&tv1, NULL);
+  //struct timeval tv1;
+  //struct timeval tv2;
+  //gettimeofday(&tv1, NULL);
   Location l = GreedyVoronoiMove::move(grid, stones, color); 
   //Location l = SymmetricMove::move(grid, stones, color);
 
-  gettimeofday(&tv2, NULL);
-  printf ("Total time = %f seconds\n",
-           (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
-           (double) (tv2.tv_sec - tv1.tv_sec));
+  //gettimeofday(&tv2, NULL);
+  //printf ("Total time = %f seconds\n",
+  //         (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+  //         (double) (tv2.tv_sec - tv1.tv_sec));
   std::cout << l.getX() << " " << l.getY() << std::endl;
   return 0;
 }
