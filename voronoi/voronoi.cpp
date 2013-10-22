@@ -96,13 +96,7 @@ class Grid {
       setColor(stones);
     }
 
-    Location getTile(Location l) {
-      int x = l.getX();
-      int y = l.getY();
-
-      return Location(x/stride*stride , y/stride*stride);
-    }
-
+  
     Location center() {
       return Location(WIDTH/2, HEIGHT/2);
     }
@@ -232,11 +226,26 @@ class GreedyVoronoiMove{
     static std::vector<Location> getStoneTile(std::vector<Stone> & stones, Grid grid) {
       std::vector<Location> locs;
       for(int i = 0; i < stones.size(); i ++ ) {
-        locs.push_back(grid.getTile(stones[i].l));
+        locs.push_back(getTile(stones[i].l));
       }
       return locs;
     }
 
+    static Location getTile(Location l ) {
+      return Location(l.getX() / stride * stride, l.getY() / stride *stride );
+    }
+
+    static std::vector<Stone> getOtherStones( std::map<int, std::vector<Stone> > stoneset, int color) {
+      std::vector< Stone > stones;
+      for(int i = 0; i < stoneset.size() ; i ++ ) {
+        if( i != color ) {
+          for(int j = 0; j < stoneset[i].size(); i ++ ) {
+            stones.push_back(stoneset[i][j]);
+          }
+        }
+      }
+      return stones;
+    }
   public:
     static Location move(Grid grid, std::vector<Stone> stone, int color) {
       int num = 0;
@@ -247,16 +256,14 @@ class GreedyVoronoiMove{
         return grid.center();
       }
       std::map<int, std::vector<Stone> > stoneset = splitStone(stone);
-      std::vector<Stone> onestones;
+      std::vector<Stone> onestones = getOtherStones(stoneset, color);
+      //std::cout << "The size of onstones is " << onestones.size() << std::endl;
 
-      if(color == 1) {
-        onestones = stoneset[2];
-      }else {
-        onestones = stoneset[1];
-      }
 
       //std::vector<Location> locs = getAllTile(Grid::WIDTH, Grid::HEIGHT);
       std::vector<Location> locs = getStoneTile(onestones, grid);
+      //std::cout << "The size of locs is " << locs.size() << std::endl;
+      /*
       for(int n = 0; n < locs.size() ; n ++ ) {
         int i = locs[n].getX();
         int j = locs[n].getY();
@@ -266,26 +273,43 @@ class GreedyVoronoiMove{
         pass.push_back(s);
         grid.setColor(pass);
         std::map<int, int> ret = grid.getColorDist();
+        std::cout << ret[1] << std::endl;
+        std::cout << ret[color] << std::endl;
         if (ret[color] > num) {
           num = ret[color];
           idx_i = i;
           idx_j = j;
         }
       }
+      */
 
       int fidx_i = idx_i;
       int fidx_j = idx_j;
-      for(int i = idx_i; i < idx_i + stride;  i ++) {
-        for(int j = idx_j; j < idx_j + stride; j ++ ) {
-          Stone s(color, i, j);
-          std::vector<Stone> pass = stone;
-          pass.push_back(s);
-          grid.setColor(pass);
-          std::map<int, int> ret = grid.getColorDist();
-          if (ret[color] > num) {
-            num = ret[color];
-            fidx_i = i;
-            fidx_j = j;
+      for(int n = 0; n < locs.size(); n ++ ) {
+        int idx_i = locs[n].getX();
+        int idx_j = locs[n].getY();
+        for(int i = idx_i; i < idx_i + stride;  i ++) {
+          for(int j = idx_j; j < idx_j + stride; j ++ ) {
+            Location tmp(i, j);
+            int flag = 0;
+            for(int m = 0; m < stone.size();m ++ ) {
+              if( stone[m].l == tmp) {
+                flag = 1;
+                break;
+              }
+            }
+
+            if ( flag == 1) continue;
+            Stone s(color, i, j);
+            std::vector<Stone> pass = stone;
+            pass.push_back(s);
+            grid.setColor(pass);
+            std::map<int, int> ret = grid.getColorDist();
+            if (ret[color] > num) {
+              num = ret[color];
+              fidx_i = i;
+              fidx_j = j;
+            }
           }
         }
       }
@@ -294,7 +318,7 @@ class GreedyVoronoiMove{
     }
 };
 
-int GreedyVoronoiMove::stride = 40;
+int GreedyVoronoiMove::stride = 10;
 
 
 class ReversedMove {
@@ -426,6 +450,8 @@ int main(int argc, char ** argv) {
   }
   grid.setColor(stones);
   std::map<int, int> dist = grid.getColorDist(); 
+  //std::cout << dist[1] << " " << dist[2] << std::endl;
+  //return 0;
   struct timeval tv1;
   struct timeval tv2;
   gettimeofday(&tv1, NULL);

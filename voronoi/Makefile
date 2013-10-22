@@ -1,5 +1,5 @@
 illuminati:voronoi.cpp
-	g++ -o illuminati voronoi.cpp -O3
+	g++ -o illuminati voronoi.cpp -g
 
 clean:
 	rm illuminati
