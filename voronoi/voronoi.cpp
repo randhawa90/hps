@@ -1,7 +1,11 @@
 #include <cmath>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <vector>
 #include <map>
 #include <cfloat>
+#include <iostream>
 
 class Location {
   private:
@@ -46,7 +50,7 @@ std::ostream& operator<<(std::ostream& out, const Location & l) {
 
 
 struct Stone{
-  Stone(int c, int x_, int y_): l ( x, y) {
+  Stone(int c, int x_, int y_): l ( x_, y_) {
     color = c;
   }
   Stone(const Stone& s) {
@@ -55,7 +59,7 @@ struct Stone{
   }
   int color;
   Location l;
-}
+};
 
 class Grid {
   public:
@@ -159,7 +163,7 @@ class Grid {
       for(; iter != stoneset.end(); iter ++){
         int sum = 0;
         for(int m = 0; m < iter->second.size(); m ++) {
-          sum += 1.0 / l.getDS((iter->second)[m].l)
+          sum += 1.0 / l.getDS((iter->second)[m].l);
         }
         if( pull < sum){
           pull  = sum;
@@ -220,3 +224,58 @@ class GreedyVoronoiMove{
 };
 
 int GreedyVoronoiMove::stride = 40;
+
+
+int fpeek(FILE* fin) {
+  int c;
+  c = fgetc(fin);
+  ungetc(c, fin);
+  return c;
+}
+
+int main(int argc, char ** argv) {
+  if (argc != 2 && argc != 3) {
+    fprintf(stderr, "Fuck!\n");
+    return 0;
+  }
+  int color = atoi(argv[1]); 
+  FILE * fin = stdin;
+  if( argc == 3) {
+    fin = NULL;
+    char* filename = argv[2];
+
+    if( (fin = fopen(filename, "r")) == NULL) {
+      fprintf(stderr, "Fuck!\n");
+      return 0;
+    }
+  }
+  std::vector<Stone> stones;
+  int c, x, y;
+  while( 1 ) {
+    fscanf(fin, "(%d,%d,%d)", &c, &x, &y);
+    printf("%d, %d, %d\n", c, x, y);
+    stones.push_back(Stone(c, x, y));
+    if( fpeek(fin) != ',') {
+      break;
+    }else {
+      fgetc(fin);
+    }
+  }
+
+  std::map<int, int> areas;
+  while(1) {
+    fscanf(fin, "(%d,%d)", &c, &x);
+    printf("%d, %d\n", c, x);
+    areas[c] = x;
+    if( fpeek(fin) != ',') {
+      break;
+    }else {
+      fgetc(fin);
+    }
+  }
+
+  Location l = GreedyVoronoiMove::move(grid, stones, color); 
+  std::cout << "(" << color << "," << l.getX() << "," << l.getY() << ")" << std::endl;
+  return 0;
+  
+}
