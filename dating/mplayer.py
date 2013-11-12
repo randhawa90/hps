@@ -53,24 +53,41 @@ cans = []
 
 
 
-def sgd(cans):
-  learning_rate = 0.0001
+def train(cans, learning_rate, epoch = 10000):
   num = len(cans[0].feature)
   weight = np.random.randn(num).astype(np.float32)
   weight[weight>0] /= weight[weight>0].sum()
   weight[weight<0] /= -1.0 * weight[weight<0].sum()
   print weight
-  for i in range(10000):
-    grad = np.zeros_like(weight)
+  for i in range(epoch):
     for can in cans:
+      grad = np.zeros_like(weight)
       input = can.feature
       score = can.score
       yc = (input * weight).sum()
       grad += grad * (yc - score)
-    weight = weight - learning_rate * grad
-    #weight[weight>0] /= weight[weight>0].sum()
-    #weight[weight<0] /= -1.0 * weight[weight<0].sum()
+      weight = weight - learning_rate * grad
+    weight[weight>0] /= weight[weight>0].sum()
+    weight[weight<0] /= -1.0 * weight[weight<0].sum()
   return weight
+
+def test(weight, can):
+  return abs(can.score - (can.feature * weight).sum())
+
+def sgd(cans):
+  train_set = cans[:18]
+  test_set = cans[18:]
+  
+  best = (None, -1000000, 0.0)
+  for lr in [0.00001, 0.0001, 0.001, 0.01, 0.1]:
+    weight = train(cans, lr, epoch = 1000)
+    cost = 0
+    for can in test_set:
+      cost += test(weight, can)
+    if best[1] > cost:
+      best = [weight, cost, lr]
+
+  return train(cans, best[2])
 
 def np2str(a):
     rst = ''
