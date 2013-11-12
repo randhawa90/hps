@@ -2,6 +2,7 @@ import socket
 import sys
 import numpy as np
 from sklearn import linear_model
+import matplotlib.pyplot as plt
 
 debug = False
 
@@ -64,12 +65,14 @@ def linear_initialize(cans):
   return clf.coef_
 
 
-def train(cans, learning_rate, epoch = 10000):
+def train(cans, learning_rate, epoch = 10000, plot = False):
   num = len(cans[0].feature)
   #weight = np.random.randn(num).astype(np.float32)
   weight = linear_initialize(cans)
   weight[weight>0] /= weight[weight>0].sum()
   weight[weight<0] /= -1.0 * weight[weight<0].sum()
+
+  grads = []
   for i in range(epoch):
     for can in cans:
       grad = np.zeros_like(weight)
@@ -77,9 +80,15 @@ def train(cans, learning_rate, epoch = 10000):
       score = can.score
       yc = (input * weight).sum()
       grad += grad * (yc - score)
+      grads.append(grad)
     weight = weight - learning_rate * grad
-    #weight[weight>0] /= weight[weight>0].sum()
-    #weight[weight<0] /= -1.0 * weight[weight<0].sum()
+    weight[weight>0] /= weight[weight>0].sum()
+    weight[weight<0] /= -1.0 * weight[weight<0].sum()
+
+    if plot:
+      plt.plot(range(epoch), grads)
+      plt.show()
+
   return weight
 
 def test(weight, can):
@@ -88,7 +97,7 @@ def test(weight, can):
 def sgd(cans):
   train_set = cans[:16]
   test_set = cans[16:]
-  
+
   best = (None, 1000000, 0.0)
   for lr in [0.00001, 0.0001, 0.001, 0.01, 0.1]:
     weight = train(cans, lr, epoch = 1000)
@@ -98,7 +107,7 @@ def sgd(cans):
     if best[1] > cost:
       best = [weight, cost, lr]
 
-  weight = train(cans, best[2])
+  weight = train(cans, best[2], plot = True)
   print weight
   return weight
 
