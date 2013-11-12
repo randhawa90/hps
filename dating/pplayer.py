@@ -133,14 +133,25 @@ def np2str(a):
     return rst
 
 
-def create_weight(num_weight):
-  finfo32 = np.finfo(np.float32)
-  finfo32.precision = 2
-  weight = np.random.randn(num_weight).astype(np.float32)
-  print weight
+def constraint_weight(weight):
   weight[weight > 0] /= weight[weight>0].sum()
   weight[weight < 0] /= -1.0*weight[weight<0].sum()
+  for i in range(len(weight)):
+    if weight[i] == 0 or (weight[i] > 0 and weight[i] < 0.01):
+      weight[i] = 0.01
+    if weight[i] < 0 and weight[i] > -0.01:
+      weight[i] = -0.01
+  weight = np.array([float('%.2f' % x) for x in weight]).astype(np.float32)
+  while weight[weight>0].sum() != 1.0 or weight[weight<0].sum() != -1.0:
+    weight[weight.argmax()] -= weight[weight>0].sum() - 1
+    weight[weight.argmin()] -= weight[weight<0].sum() + 1
+    print weight[weight>0].sum(),  weight[weight<0].sum()
   return weight
+
+
+def create_weight(num_weight):
+  weight = np.random.randn(num_weight).astype(np.float32)
+  return constraint_weight(weight)
 
 if __name__ == '__main__':
     msg = sock.read()

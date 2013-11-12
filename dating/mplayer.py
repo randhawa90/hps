@@ -191,9 +191,10 @@ if __name__ == '__main__':
 
       sock.write(np2str(rst))
       msg = sock.read()
+      if i == num - 1:
+        break
       cans = []
       lines = msg.split('\n')
-      print len(lines[1:])
       for line in lines[1:]:
         if line.strip() == '':
             continue
