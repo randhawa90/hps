@@ -1,8 +1,9 @@
 import socket
 import sys
 import numpy as np
+import random
 from sklearn import linear_model
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 debug = False
 
@@ -46,13 +47,18 @@ teamname = 'illuminati'
 sock = MySocket(port, host)
 
 
+has_to_pos = None
+has_to_neg = None
+could_be_pos = None
+could_be_neg = None
+glr = None
+
 class Candidate(object):
     def __init__(self, feature, score):
         self.feature = np.array(feature).astype(np.float32)
         self.score = score
 
 cans = []
-
 
 def linear_initialize(cans):
   X = []
@@ -65,10 +71,9 @@ def linear_initialize(cans):
   return clf.coef_
 
 
-def train(cans, learning_rate, epoch = 10000, plot = False):
+def train(cans, learning_rate, weight, epoch = 10000, plot = False):
   num = len(cans[0].feature)
   #weight = np.random.randn(num).astype(np.float32)
-  weight = linear_initialize(cans)
   weight[weight>0] /= weight[weight>0].sum()
   weight[weight<0] /= -1.0 * weight[weight<0].sum()
 
@@ -81,33 +86,36 @@ def train(cans, learning_rate, epoch = 10000, plot = False):
       yc = (input * weight).sum()
       grad += grad * (yc - score)
       grads.append(grad)
-    weight = weight - learning_rate * grad
-    weight[weight>0] /= weight[weight>0].sum()
-    weight[weight<0] /= -1.0 * weight[weight<0].sum()
-
-    if plot:
-      plt.plot(range(epoch), grads)
-      plt.show()
+      weight = weight - learning_rate * grad
+    #weight[weight>0] /= weight[weight>0].sum()
+    #weight[weight<0] /= -1.0 * weight[weight<0].sum()
 
   return weight
 
 def test(weight, can):
   return abs(can.score - (can.feature * weight).sum())
 
-def sgd(cans):
+def sgd(cans, weight):
+  print 'weight before training'
+  print weight
+  global glr
   train_set = cans[:16]
   test_set = cans[16:]
 
-  best = (None, 1000000, 0.0)
-  for lr in [0.00001, 0.0001, 0.001, 0.01, 0.1]:
-    weight = train(cans, lr, epoch = 1000)
-    cost = 0
-    for can in test_set:
-      cost += test(weight, can)
-    if best[1] > cost:
-      best = [weight, cost, lr]
+  old_weight = weight
+  if glr is None:
+    best = (None, 1000000, 0.0)
+    for lr in [0.00001, 0.0001, 0.001, 0.01, 0.1]:
+      weight = train(train_set, lr, weight, epoch = 1000)
+      cost = 0
+      for can in test_set:
+        cost += test(weight, can)
+      if best[1] > cost:
+        best = [weight, cost, lr]
+    glr = best[2]
 
-  weight = train(cans, best[2], plot = True)
+  weight = train(cans, glr, old_weight,  plot = True)
+  print 'weight after training'
   print weight
   return weight
 
@@ -121,12 +129,19 @@ def np2str(a):
 if __name__ == '__main__':
     msg = sock.read()
     sock.write(teamname)
+    weight = None
 
     msg  = sock.read()
     lines = msg.split('\n')
     M, features = lines[0].split()
 
     num_feature = int(features)
+    if has_to_pos is None:
+      has_to_pos = np.zeros(num_feature).astype(np.int32)
+      has_to_neg = np.zeros(num_feature).astype(np.int32)
+      could_be_pos = np.zeros(num_feature).astype(np.float32)
+      could_be_neg = np.zeros(num_feature).astype(np.float32)
+
     num = 20
     for line in lines[1:]:
         if line.strip() == '':
@@ -134,8 +149,47 @@ if __name__ == '__main__':
         candidate = [float(x) for x in line.split()]
         score = candidate[-1]
         cans.append(Candidate(candidate[:-1], score))
-    weight = sgd(cans)
-    rst = np.zeros(num_feature).astype(np.float32)
-    rst[weight>0] = 1
-    sock.write(np2str(rst))
-    sock.read()
+
+    for i in range(num):
+      if weight is None:
+        weight = linear_initialize(cans)
+        weight = sgd(cans, weight)
+        has_to_pos[weight > 2.0 / num_feature] = 1
+        could_be_pos[weight > 0] = 1
+        could_be_pos -= has_to_pos
+        has_to_neg[weight < -2.0 / num_feature] = 1
+        could_be_neg[weight < 0] = 1
+        could_be_neg -= has_to_neg
+
+      rst = np.zeros(num_feature).astype(np.float32)
+
+      index = 0
+      if i == num - 1:
+        rst[has_to_pos == 1] = 1
+      else:
+        for i in range(10000):
+          index = random.randint(0, num_feature-1)
+          if could_be_pos[index] == 1 or could_be_neg[index] == 1:
+            break
+        print index
+        rst[index] = 1
+
+      sock.write(np2str(rst))
+      msg = sock.read()
+      cans = []
+      lines = msg.split('\n')
+      print len(lines[1:])
+      for line in lines[1:]:
+        if line.strip() == '':
+            continue
+        candidate = [float(x) for x in line.split()]
+        score = candidate[-1]
+        cans.append(Candidate(candidate[:-1], score))
+      print index, 'score is', cans[-1].score
+      if cans[-1].score < 0:
+        has_to_neg[index] = 1
+      else:
+        has_to_pos[index] = 1
+      could_be_pos[index] = 0
+      could_be_neg[index] = 0
+
