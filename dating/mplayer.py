@@ -1,8 +1,9 @@
 import socket
 import sys
 import numpy as np
+from sklearn import linear_model
 
-debug = True
+debug = False
 
 class MySocket(object):
     MSGLEN = 8888
@@ -52,13 +53,23 @@ class Candidate(object):
 cans = []
 
 
+def linear_initialize(cans):
+  X = []
+  Y = []
+  for can in cans:
+    X.append(can.feature.tolist())
+    Y.append(can.score)
+  clf = linear_model.BayesianRidge()
+  clf.fit(X, Y)
+  return clf.coef_
+
 
 def train(cans, learning_rate, epoch = 10000):
   num = len(cans[0].feature)
-  weight = np.random.randn(num).astype(np.float32)
+  #weight = np.random.randn(num).astype(np.float32)
+  weight = linear_initialize(cans)
   weight[weight>0] /= weight[weight>0].sum()
   weight[weight<0] /= -1.0 * weight[weight<0].sum()
-  print weight
   for i in range(epoch):
     for can in cans:
       grad = np.zeros_like(weight)
@@ -66,19 +77,19 @@ def train(cans, learning_rate, epoch = 10000):
       score = can.score
       yc = (input * weight).sum()
       grad += grad * (yc - score)
-      weight = weight - learning_rate * grad
-    weight[weight>0] /= weight[weight>0].sum()
-    weight[weight<0] /= -1.0 * weight[weight<0].sum()
+    weight = weight - learning_rate * grad
+    #weight[weight>0] /= weight[weight>0].sum()
+    #weight[weight<0] /= -1.0 * weight[weight<0].sum()
   return weight
 
 def test(weight, can):
   return abs(can.score - (can.feature * weight).sum())
 
 def sgd(cans):
-  train_set = cans[:18]
-  test_set = cans[18:]
+  train_set = cans[:16]
+  test_set = cans[16:]
   
-  best = (None, -1000000, 0.0)
+  best = (None, 1000000, 0.0)
   for lr in [0.00001, 0.0001, 0.001, 0.01, 0.1]:
     weight = train(cans, lr, epoch = 1000)
     cost = 0
@@ -87,7 +98,9 @@ def sgd(cans):
     if best[1] > cost:
       best = [weight, cost, lr]
 
-  return train(cans, best[2])
+  weight = train(cans, best[2])
+  print weight
+  return weight
 
 def np2str(a):
     rst = ''
