@@ -127,14 +127,17 @@ def sgd(cans, weight):
 
 def np2str(a):
     rst = ''
-    for i in a:
-        rst +=  '%.2f' % i + ' '
+    for f in a:
+        rst +=  ('%.2f' % f) + ' '
     rst = rst[:-1]
     return rst
 
 
 def create_weight(num_weight):
-  weight = np.random.randn(num_weight)
+  finfo32 = np.finfo(np.float32)
+  finfo32.precision = 2
+  weight = np.random.randn(num_weight).astype(np.float32)
+  print weight
   weight[weight > 0] /= weight[weight>0].sum()
   weight[weight < 0] /= -1.0*weight[weight<0].sum()
   return weight
