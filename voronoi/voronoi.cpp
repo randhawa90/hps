@@ -472,8 +472,8 @@ int main(int argc, char ** argv) {
   //struct timeval tv1;
   //struct timeval tv2;
   //gettimeofday(&tv1, NULL);
-  Location l = GreedyVoronoiMove::move(grid, stones, color); 
-  //Location l = SymmetricMove::move(grid, stones, color);
+  //Location l = GreedyVoronoiMove::move(grid, stones, color); 
+  Location l = SymmetricMove::move(grid, stones, color);
 
   //gettimeofday(&tv2, NULL);
   //printf ("Total time = %f seconds\n",

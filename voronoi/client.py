@@ -125,7 +125,7 @@ if __name__=="__main__":
         # Protocol 2
         question=readsocket(s,1)
         assert (question=='Team Name?')
-        sendsocket(s, "FUCK")
+        sendsocket(s, "ddod")
         # Protocol 3, read and parse parameters
         params=readsocket(s)
         params=params.split(',')

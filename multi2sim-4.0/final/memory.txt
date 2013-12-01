@@ -1,0 +1,92 @@
+[CacheGeometry geo-l1]
+Latency = 2
+BlockSize = 64
+Assoc = 2
+Sets = 32
+Policy = LRU
+Ports = 2
+
+[Network net-l1-l2]
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 256
+DefaultInputBufferSize = 1024
+
+[CacheGeometry geo-l2]
+Latency = 20
+BlockSize = 64
+Assoc = 4
+Sets = 512
+Policy = LRU
+Ports = 4
+
+[Network net-l2-mm]
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 256
+DefaultInputBufferSize = 1024
+
+[Module mod-l1-0]
+Geometry = geo-l1
+LowNetwork = net-l1-l2
+Type = Cache
+LowModules = mod-l2
+
+
+[Module mod-mm]
+BlockSize = 256
+Type = MainMemory
+HighNetwork = net-l2-mm
+Latency = 200
+
+
+[Module mod-l2]
+Geometry = geo-l2
+LowNetwork = net-l2-mm
+Type = Cache
+HighNetwork = net-l1-l2
+LowModules = mod-mm
+
+
+[Entry core-0]
+Type = CPU
+Core = 0
+DataModule = mod-l1-0
+InstModule = mod-l1-0
+Thread = 0
+
+[CacheGeometry geo-l1-1]
+Latency = 2
+BlockSize = 64
+Assoc = 8
+Sets = 32
+Policy = LRU
+Ports = 2
+
+[CacheGeometry geo-l2-1]
+Latency = 20
+BlockSize = 64
+Assoc = 8
+Sets = 512
+Policy = LRU
+Ports = 4
+
+[Module mod-l1-1]
+Geometry = geo-l1-1
+LowNetwork = net-l1-l2
+Type = Cache
+LowModules = mod-l2-2
+
+
+[Module mod-l2-2]
+Geometry = geo-l2-1
+LowNetwork = net-l2-mm
+Type = Cache
+HighNetwork = net-l1-l2
+LowModules = mod-mm
+
+
+[Entry core-1]
+Type = CPU
+Core = 1
+DataModule = mod-l1-1
+InstModule = mod-l1-1
+Thread = 0

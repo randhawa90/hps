@@ -1,0 +1,4 @@
+[ General ]
+Cores = 4
+Threads = 1
+ContextSwitch=t
