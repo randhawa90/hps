@@ -1635,6 +1635,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		/* Check: state must not be invalid or shared.
 		 * By default, only one pending request.
 		 * Response depends on state */
+		fprintf(stderr, "stack->state = %d\n", stack->state);
 		assert(stack->state != cache_block_invalid);
 		assert(stack->state != cache_block_shared);
 		assert(stack->state != cache_block_noncoherent);
@@ -1796,7 +1797,10 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 				/* Decrease the amount of data that mod will have to send back
 				 * to its higher level cache */
+				fprintf(stderr, "Before subtraction %d\n", ret->reply_size);
 				ret->reply_size -= target_mod->block_size;
+				fprintf(stderr, "target_mod->block_size = %d\n", target_mod->block_size);
+				fprintf(stderr, "After subtraction %d\n", ret->reply_size);
 				assert(ret->reply_size >= 8);
 			}
 			else
