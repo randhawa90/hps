@@ -108,30 +108,35 @@ Geometry = geo-l3
 HighNetwork = net-l2-l3-low
 LowNetwork = net-l3-mm
 LowModules = mod-mm
+AddressRange = BOUNDS 0x08000000 0x0fffffff
 [Module mod-l3-mid_0]
 Type = Cache
 Geometry = geo-l3
 HighNetwork = net-l2-l3-mid_0
 LowNetwork = net-l3-mm
 LowModules = mod-mm
+AddressRange = BOUNDS 0x0fffffff 0x4fffffff
 [Module mod-l3-mid_1]
 Type = Cache
 Geometry = geo-l3
 HighNetwork = net-l2-l3-mid_1
 LowNetwork = net-l3-mm
 LowModules = mod-mm
+AddressRange = BOUNDS 0x40000000 0x7fffffff
 [Module mod-l3-mid_main]
 Type = Cache
 Geometry = geo-l3
 HighNetwork = net-l2-l3-mid_main
 LowNetwork = net-l3-mm
 LowModules = mod-mm
+AddressRange = BOUNDS 0x0 0x07ffffff
 [Module mod-l3-high]
 Type = Cache
 Geometry = geo-l3
 HighNetwork = net-l2-l3-big
 LowNetwork = net-l3-mm
 LowModules = mod-mm
+AddressRange = BOUNDS 0x80000000 0xffffffff
 [Module mod-mm]
 Type = MainMemory
 BlockSize = 1024
