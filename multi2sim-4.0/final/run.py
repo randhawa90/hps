@@ -19,6 +19,9 @@ class Thread(object):
   def __str__(self):
     return 'pid = %d alloc = %d dealloc = %d inst = %d' % (self.pid, self.alloc, self.dealloc, self.inst)
 
+  def get_ipc(self):
+    return self.inst * 1.0 / (self.dealloc - self.alloc)
+
 def get_threads(filename):
   threads = []
   with open(filename, 'r') as f:
@@ -50,6 +53,6 @@ with open(filename, 'w') as f:
 
 threads = get_threads(filename)
 
-threads.sort(key = lambda x: x.pid)
+threads.sort(key = lambda x: x.get_ipc())
 for t in threads:
-  print t
+  print t, t.get_ipc()
