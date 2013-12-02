@@ -76,36 +76,60 @@ LowModules = mod-l2-big
 Type = Cache
 Geometry = geo-l2-low
 HighNetwork = net-l1-l2-low
-LowNetwork = net-l2-l3
-LowModules = mod-l3
+LowNetwork = net-l2-l3-low
+LowModules = mod-l3-low
 [Module mod-l2-mid_0]
 Type = Cache
 Geometry = geo-l2-mid
 HighNetwork = net-l1-l2-mid_0
-LowNetwork = net-l2-l3
-LowModules = mod-l3
+LowNetwork = net-l2-l3-mid_0
+LowModules = mod-l3-mid_0
 [Module mod-l2-mid_1]
 Type = Cache
 Geometry = geo-l2-mid
 HighNetwork = net-l1-l2-mid_1
-LowNetwork = net-l2-l3
-LowModules = mod-l3
+LowNetwork = net-l2-l3-mid_1
+LowModules = mod-l3-mid_1
 [Module mod-l2-mid_main]
 Type = Cache
 Geometry = geo-l2-mid
 HighNetwork = net-l1-l2-mid_main
-LowNetwork = net-l2-l3
-LowModules = mod-l3
+LowNetwork = net-l2-l3-mid_main
+LowModules = mod-l3-mid_main
 [Module mod-l2-big]
 Type = Cache
 Geometry = geo-l2-big
 HighNetwork = net-l1-l2-big
-LowNetwork = net-l2-l3
-LowModules = mod-l3
-[Module mod-l3]
+LowNetwork = net-l2-l3-big
+LowModules = mod-l3-big
+[Module mod-l3-low]
 Type = Cache
 Geometry = geo-l3
-HighNetwork = net-l2-l3
+HighNetwork = net-l2-l3-low
+LowNetwork = net-l3-mm
+LowModules = mod-mm
+[Module mod-l3-mid_0]
+Type = Cache
+Geometry = geo-l3
+HighNetwork = net-l2-l3-mid_0
+LowNetwork = net-l3-mm
+LowModules = mod-mm
+[Module mod-l3-mid_1]
+Type = Cache
+Geometry = geo-l3
+HighNetwork = net-l2-l3-mid_1
+LowNetwork = net-l3-mm
+LowModules = mod-mm
+[Module mod-l3-mid_main]
+Type = Cache
+Geometry = geo-l3
+HighNetwork = net-l2-l3-mid_main
+LowNetwork = net-l3-mm
+LowModules = mod-mm
+[Module mod-l3-high]
+Type = Cache
+Geometry = geo-l3
+HighNetwork = net-l2-l3-big
 LowNetwork = net-l3-mm
 LowModules = mod-mm
 [Module mod-mm]
@@ -133,7 +157,23 @@ DefaultBandwidth = 256
 DefaultInputBufferSize = 1024
 DefaultOutputBufferSize = 1024
 DefaultBandwidth = 256
-[Network net-l2-l3]
+[Network net-l2-l3-low]
+DefaultInputBufferSize = 2048
+DefaultOutputBufferSize =2048 
+DefaultBandwidth = 512
+[Network net-l2-l3-mid_0]
+DefaultInputBufferSize = 2048
+DefaultOutputBufferSize =2048 
+DefaultBandwidth = 512
+[Network net-l2-l3-mid_1]
+DefaultInputBufferSize = 2048
+DefaultOutputBufferSize =2048 
+DefaultBandwidth = 512
+[Network net-l2-l3-mid_main]
+DefaultInputBufferSize = 2048
+DefaultOutputBufferSize =2048 
+DefaultBandwidth = 512
+[Network net-l2-l3-big]
 DefaultInputBufferSize = 2048
 DefaultOutputBufferSize =2048 
 DefaultBandwidth = 512
