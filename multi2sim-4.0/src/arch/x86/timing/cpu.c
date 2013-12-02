@@ -1160,8 +1160,10 @@ void x86_cpu_run_fast_forward(void)
 int x86_cpu_run(void)
 {
 	/* Stop if no context is running */
-	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
+	if (x86_emu->finished_list_count >= x86_emu->context_list_count) {
+		//fprintf(stderr, "-----Debug---- inst_count = %lld inst_count_context_list_head = %lld\n", x86_emu->inst_count, x86_emu->context_list_head->inst_count);
 		return 0;
+	}
 
 	/* Fast-forward simulation */
 	if (x86_cpu_fast_forward_count && x86_emu->inst_count < x86_cpu_fast_forward_count)

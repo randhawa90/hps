@@ -1389,7 +1389,7 @@ int main(int argc, char **argv)
 	if (*si_disasm_file_name)
 		si_disasm(si_disasm_file_name);
 
-	/* OpenGL disassembler tool */
+	/* OpenG disassembler tool */
 	if (*evg_opengl_disasm_file_name)
 		evg_emu_opengl_disasm(evg_opengl_disasm_file_name, evg_opengl_disasm_shader_index);
 
@@ -1503,9 +1503,10 @@ int main(int argc, char **argv)
 	/* Finalization of memory system */
 	mem_system_done();
 
+	x86_emu_done();
 	/* Finalization of detailed CPU simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)
-		x86_cpu_done();
+		 x86_cpu_done();
 
 	/* Finalization of detailed GPU simulation */
 	if (evg_emu_kind == evg_emu_kind_detailed)
@@ -1519,10 +1520,10 @@ int main(int argc, char **argv)
 	net_done();
 	esim_done();
 	trace_done();
-	x86_emu_done();
 	arm_emu_done();
 	debug_done();
 	mhandle_done();
+
 
 	/* End */
 	return 0;

@@ -18,7 +18,6 @@
  */
 
 #include <x86-timing.h>
-#include <stdarg.h>
 
 
 int x86_cpu_pipeline_empty(int core, int thread)
@@ -26,13 +25,6 @@ int x86_cpu_pipeline_empty(int core, int thread)
 	return !X86_THREAD.rob_count && !list_count(X86_THREAD.fetch_queue) &&
 		!list_count(X86_THREAD.uop_queue);
 }
-/*
-static void printf(char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	vfprintf(stderr, fmt, va);
-}
-*/
 
 /* Return the node identifier that best fits to the context with the following priority:
  *  1) If the node where the context was allocated before is free, return it.

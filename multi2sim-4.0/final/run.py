@@ -3,64 +3,53 @@ import subprocess
 from subprocess import PIPE
 import time
 
+DEBUG = '=Debug=:'
+PID = 'pid='
+ALLOC='alloc_when='
+DEALLOC='dealloc_when='
+INST='inst='
 
-def parser(filename):
-  dic = {}
-  name = ''
+class Thread(object):
+  def __init__(self, pid, alloc, dealloc, inst):
+    self.pid = pid
+    self.alloc = alloc
+    self.dealloc = dealloc
+    self.inst = inst
+
+  def __str__(self):
+    return 'pid = %d alloc = %d dealloc = %d inst = %d' % (self.pid, self.alloc, self.dealloc, self.inst)
+
+def get_threads(filename):
+  threads = []
   with open(filename, 'r') as f:
     for line in f:
       line = line.strip()
-      if line == '':
-        continue
-      if line[0] == '[':
-        name = line[1: line.find(']')]
-        name = name.strip()
-        dic[name] = {}
-      else:
-        key , equ, value = line.split()
-        dic[name][key] = value
-  return dic
+      if line.startswith(DEBUG):
+        line = line[len(DEBUG):]
+        pid, alloc, dealloc, inst= line.split()
+        pid = int(pid[len(PID):])
+        alloc = int(alloc[len(ALLOC):])
+        dealloc = int(dealloc[len(DEALLOC):])
+        inst = int(inst[len(INST):])
+        print pid, alloc, dealloc, inst
+        threads.append(Thread(pid, alloc, dealloc, inst))
+    return threads
+  
 
-def write(filename, dic):
-  with open(filename, 'w') as f:
-    for name in dic:
-      d = dic[name]
-      print >> f, '[%s]' % name
-      for key in d:
-        print >> f, key, '=', d[key]
-      print >> f
-      print >> f
+command = '../src/m2s --x86-config cpu-config --x86-sim detailed --mem-config mem-config main 3'.split()
+filename = 'result'
+with open(filename, 'w') as f:
+  start = time.time()
+  print ' '.join(command)
+  pipe = subprocess.Popen(command, stderr = PIPE, stdout = PIPE)
+  pipe.wait()
+  lines = pipe.stderr.read()
+  f.writelines(lines)
+  print 'time is', time.time() - start
 
-def get_information(lines):
-  c, i = 1, 1
-  for line in lines:
-    line = line.strip()
-    if line.startswith('Cycles'):
-      name, equ, c = line.split()
-    elif line.startswith('Instructions'):
-      name, equ, i = line.split()
-  return int(c), int(i)
 
-if __name__== '__main__':
-  filename = 'cpu.txt'
-  dic = parser(filename)
-  print dic
-  command = '../bin/m2s --x86-config cpu.txt --x86-sim detailed --mem-config memory.txt main'.split()
-  for cores, threads in [(2,2)]:
-    dic['General']['Cores'] = cores
-    dic['General']['Threads'] = threads
-    write(filename, dic)
-    for n in range(1, 5):
-      with open('result-'+ str(cores)+str(threads)+'-'+str(n), 'w') as f:
-        start = time.time()
-        command.append(str(n))
-        print ' '.join(command)
-        pipe = subprocess.Popen(command, stderr = PIPE, stdout = PIPE)
-        pipe.wait()
-        lines = pipe.stderr.read()
-        command = command[:-1]
-        cycle, instruction = get_information(lines)
-        print cycle, instruction
-        print 1.0 * instruction / cycle
-        f.writelines(lines)
-        print 'time is', time.time() - start
+threads = get_threads(filename)
+
+threads.sort(key = lambda x: x.pid)
+for t in threads:
+  print t

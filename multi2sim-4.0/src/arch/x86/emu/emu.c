@@ -114,13 +114,17 @@ void x86_emu_done(void)
 	x86_opengl_done();
 
 	/* Finish all contexts */
-	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)
+	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next) {
+		if (ctx->pid == 1000)
+			fprintf(stderr, "=Debug=:pid=%d alloc_when=%lld dealloc_when=%lld inst=%lld\n",ctx->pid,  ctx->alloc_when, x86_cpu->cycle, ctx->inst_count);
 		if (!x86_ctx_get_status(ctx, x86_ctx_finished))
 			x86_ctx_finish(ctx, 0);
+	}
 
 	/* Free contexts */
-	while (x86_emu->context_list_head)
+	while (x86_emu->context_list_head) {
 		x86_ctx_free(x86_emu->context_list_head);
+	}
 	
 	/* Finalize GPU */
 	evg_emu_done();
@@ -850,8 +854,9 @@ int x86_emu_run(void)
 		esim_finish = esim_finish_x86_max_cycles;
 
 	/* Stop if any previous reason met */
-	if (esim_finish)
+	if (esim_finish) {
 		return 0;
+	}
 
 	/* Run an instruction from every running process */
 	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)

@@ -68,7 +68,9 @@ context.o: context.c /usr/include/stdc-predef.h \
  ../../../../src/arch/evergreen/asm/evergreen-asm.dat \
  ../../../../src/arch/fermi/emu/fermi-emu.h \
  ../../../../src/arch/fermi/asm/fermi-asm.h \
- ../../../../src/arch/fermi/asm/fermi-asm.dat
+ ../../../../src/arch/fermi/asm/fermi-asm.dat \
+ ../../../../src/arch/x86/timing/x86-timing.h \
+ ../../../../src/lib/struct/repos.h
 
 /usr/include/stdc-predef.h:
 
@@ -263,3 +265,7 @@ x86-emu.h:
 ../../../../src/arch/fermi/asm/fermi-asm.h:
 
 ../../../../src/arch/fermi/asm/fermi-asm.dat:
+
+../../../../src/arch/x86/timing/x86-timing.h:
+
+../../../../src/lib/struct/repos.h:

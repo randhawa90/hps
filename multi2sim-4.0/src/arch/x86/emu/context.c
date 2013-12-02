@@ -19,6 +19,7 @@
 
 #include <mem-system.h>
 #include <x86-emu.h>
+#include <x86-timing.h>
 
 
 int x86_ctx_debug_category;
@@ -241,7 +242,6 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	/* Remove context from contexts list and free */
 	x86_emu_list_remove(x86_emu_list_context, ctx);
 	x86_ctx_debug("context %d freed\n", ctx->pid);
-
 	/* Free context */
 	free(ctx);
 }
@@ -575,7 +575,7 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
 void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
 {
 	struct x86_ctx_t *aux;
-	
+	fprintf(stderr, "=Debug=:pid=%d alloc_when=%lld dealloc_when=%lld inst=%lld\n", ctx->pid, ctx->alloc_when, x86_cpu->cycle, ctx->inst_count);
 	/* Context already finished */
 	if (x86_ctx_get_status(ctx, x86_ctx_finished | x86_ctx_zombie))
 		return;
