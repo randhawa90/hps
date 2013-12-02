@@ -3,6 +3,8 @@ import subprocess
 from subprocess import PIPE
 import time
 
+import sys
+
 DEBUG = '=Debug=:'
 PID = 'pid='
 ALLOC='alloc_when='
@@ -39,7 +41,8 @@ def get_threads(filename):
     return threads
   
 
-command = '../src/m2s --x86-config cpu-config --x86-sim detailed --mem-config mem-config main 3'.split()
+args = ' '.join(sys.argv[1:])
+command = ('../src/m2s --x86-config cpu-config --x86-sim detailed --mem-config mem-config '+ args).split()
 filename = 'result'
 with open(filename, 'w') as f:
   start = time.time()

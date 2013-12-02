@@ -401,8 +401,8 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 	{
 		char sstatus[200];
 		map_flags(&x86_ctx_status_map, ctx->status, sstatus, 200);
-		x86_ctx_debug("ctx %d changed status to %s\n",
-			ctx->pid, sstatus);
+		x86_ctx_debug("ctx %d changed status to %s at cycle %lld conext inst count = %lld cpu inst = %lld emu inst count = %lld\n",
+			ctx->pid, sstatus, x86_cpu->cycle, ctx->inst_count, x86_cpu->inst, x86_emu->inst_count);
 	}
 
 	/* Start/stop x86 timer depending on whether there are any contexts
