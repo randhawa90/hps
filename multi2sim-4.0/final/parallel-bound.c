@@ -7,6 +7,12 @@
 #include <pthread.h>
 
 
+
+int npoints[4] = {10000, 100000, 200000, 5000};
+static int num_circle_count = 0;
+
+pthread_mutex_t circle_lock = PTHREAD_MUTEX_INITIALIZER;
+
 float random_gen(float from, float to) {
   int r = rand();
   float fr = (float) r / (float) INT_MAX;
@@ -15,9 +21,6 @@ float random_gen(float from, float to) {
   return fr;
 }
 
-
-int circle_counts[4];
-int npoints[4] = {10000, 100000, 200000, 5000};
 
 void* pi(void *a) {
   struct timeval start, end;
@@ -31,10 +34,11 @@ void* pi(void *a) {
     float y = random_gen(0, 1);
     float dis = sqrt(x * x + y * y);
     if ( dis <= 1) {
-      circle_count ++;
+      pthread_mutex_lock(&circle_lock);
+      num_circle_count ++;
+      pthread_mutex_unlock(&circle_lock);
     }
   }
-  circle_counts[(int)a] = circle_count;
   gettimeofday(&end, NULL);
   fprintf(stderr, "The running time of the computation thread %d is %f\n", (int)a, 1.0 * ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec) ) / 1000000);
   return NULL;
@@ -43,7 +47,6 @@ void* pi(void *a) {
 int main() {
   pthread_t pid[4];
   int num_points = 0;
-  int num_circle_count = 0;
   int i;
   for(i = 0; i < 4; i ++ )  {
     pthread_create(&pid[i], NULL, pi, (void*)i);
@@ -51,7 +54,6 @@ int main() {
   }
   for(i = 0; i < 4; i ++ ) {
     pthread_join(pid[i], NULL);
-    num_circle_count += circle_counts[i];
   }
 
   printf("The pi is %f\n", 4.0 *num_circle_count / num_points);
