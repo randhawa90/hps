@@ -8,7 +8,7 @@
 
 
 
-int npoints[4] = {10000, 100000, 200000, 5000};
+int npoints[4] = {100, 500, 1000, 2000};
 static int num_circle_count = 0;
 
 pthread_mutex_t circle_lock = PTHREAD_MUTEX_INITIALIZER;
