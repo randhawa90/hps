@@ -1635,7 +1635,6 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		/* Check: state must not be invalid or shared.
 		 * By default, only one pending request.
 		 * Response depends on state */
-		fprintf(stderr, "stack->state = %d\n", stack->state);
 		assert(stack->state != cache_block_invalid);
 		assert(stack->state != cache_block_shared);
 		assert(stack->state != cache_block_noncoherent);

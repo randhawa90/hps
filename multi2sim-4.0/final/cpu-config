@@ -1,4 +1,4 @@
 [ General ]
-Cores = 4
+Cores = 5
 Threads = 1
 ContextSwitch=f

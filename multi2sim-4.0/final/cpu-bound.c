@@ -17,7 +17,7 @@ float random_gen(float from, float to) {
 
 
 int circle_counts[4];
-int npoints[4] = {10000, 100000, 200000, 5000};
+int npoints[4] = {100, 500, 1000, 2000};
 
 void* pi(void *a) {
   struct timeval start, end;
