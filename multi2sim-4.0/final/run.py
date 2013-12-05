@@ -15,6 +15,9 @@ CYCLES= 'Cycles'
 INSTRUCTIONS = 'Instructions'
 REALTIME = 'RealTime'
 DEFAULT_ORDER = [0,1,2,3]
+OPTIMAL_ORDER = []
+
+filename = 'result'
 
 class Thread(object):
   def __init__(self, pid, alloc, dealloc, inst):
@@ -38,11 +41,7 @@ class Stat(object):
 
 
 def order_toArgs(order):
-  args = ' '
-  for o in order:
-    args += (str(o))
-    args += (' ')
-  return args
+  return ' ' + ' '.join([str(x) for x in order])
 
 def get_threads(filename):
   threads = []
@@ -63,12 +62,13 @@ def get_threads(filename):
           for thread in threads:
             if thread.pid == pid:
               thread.inst = inst
-              #if thread.alloc > -1:
               thread.dealloc = dealloc
               thread.cycle_count += dealloc - alloc
-              #thread.alloc = -1
               break
-    return threads
+  threads.sort(key = lambda x: x.pid)
+  threads = threads [1:]
+  threads.sort(key = lambda x: -x.get_ipc())
+  return threads
 
 def get_stats(filename):
   cycles = 0
@@ -76,11 +76,9 @@ def get_stats(filename):
   realtime = 0.0
   with open(filename, 'r') as f:
     for line in f:
-      print line
       if line.startswith(CYCLES):
         line = line[len(CYCLES)+3:]
         cycles = int(line.split()[0])
-        print line
         break
       if line.startswith(INSTRUCTIONS):
         line = line[len(INSTRUCTIONS)+3:]
@@ -93,102 +91,67 @@ def get_stats(filename):
   result.append(realtime)
   return result
 
+def run_program(command):
+  global filename
+  with open(filename, 'w') as f:
+    start = time.time()
+    print ' '.join(command)
+    pipe = subprocess.Popen(command, stderr = PIPE, stdout = PIPE)
+    pipe.wait()
+    lines = pipe.stderr.read()
+    f.writelines(lines)
+    print 'time is', time.time() - start
+
+
 #ORACLE
 args = ' '.join(sys.argv[1:])
 command = ('../bin/m2s --x86-config cpu-config --x86-sim detailed '+ args + order_toArgs(DEFAULT_ORDER)).split()
-filename = 'result'
-with open(filename, 'w') as f:
-  start = time.time()
-  print ' '.join(command)
-  pipe = subprocess.Popen(command, stderr = PIPE, stdout = PIPE)
-  pipe.wait()
-  lines = pipe.stderr.read()
-  print lines[-5:]
-  f.writelines(lines)
-  print 'time is', time.time() - start
+run_program(command, filename)
 threads = get_threads(filename)
-threads.sort(key = lambda x: x.pid)
-threads = threads [1:]
-threads.sort(key = lambda x: -x.get_ipc())
-order = []
+
 for t in threads:
-  order.append(t.pid % 4)
+  OPTIMAL_ORDER.append(t.pid % 4)
+
 print 'ORACLE'
 print 'pid', 'ipc'
 for t in threads:
   print t.pid, t.get_ipc()
+
+
 #DEFAULT
-args = ' '.join(sys.argv[1:])
-print order_toArgs(DEFAULT_ORDER)
-command = ('../bin/m2s --x86-config cpu-config --x86-sim detailed --mem-config updated_hetero_mem_config '+ args + order_toArgs(DEFAULT_ORDER)).split()
-filename = 'result'
-with open(filename, 'w') as f:
-  start = time.time()
-  print ' '.join(command)
-  pipe = subprocess.Popen(command, stderr = PIPE, stdout = PIPE)
-  pipe.wait()
-  lines = pipe.stderr.read()
-  f.writelines(lines)
-  print 'time is', time.time() - start
-stats = []
-stats2 = []
-stats2.append(0.0)
-stats2.append(0.0)
-for i in range (1, 5):
-  stats.append(Stat(i,0.0))
-for i in range (1, 11):
-  threads = get_threads(filename)
-  result = get_stats(filename)
-  threads.sort(key = lambda x: x.pid)
-  threads = threads [1:]
-  for j in range (1, 5):
-    stats[i].ipc += threads[i].get_ipc()
-  stats.sort(key = lambda x: x.ipc)
-  stats2[0] += result[0]
-  stats2[1] += result[1]
-stats2[0] /= 10.0
-stats2[1] /= 10.0
-print 'DEFAULT'
-print 'pid', 'ipc'
-for s in stats:
-  s.ipc /= 10.0
-  print s.pid, s.ipc
-print 'overallIPC', 'runtime'
-print stats2[0], stats2[1]
-#OPTIMAL
-args = ' '.join(sys.argv[1:])
-command = ('../bin/m2s --x86-config cpu-config --x86-sim detailed --mem-config updated_hetero_mem_config '+ args + order_toArgs(order)).split()
-filename = 'result'
-with open(filename, 'w') as f:
-  start = time.time()
-  print ' '.join(command)
-  pipe = subprocess.Popen(command, stderr = PIPE, stdout = PIPE)
-  pipe.wait()
-  lines = pipe.stderr.read()
-  f.writelines(lines)
-  print 'time is', time.time() - start
-stats = []
-stats2 = []
-stats2.append(0.0)
-stats2.append(0.0)
-for i in range (1, 5):
-  stats.append(Stat(i,0.0))
-for i in range (1, 11):
-  threads = get_threads(filename)
-  result = get_stats(filename)
-  threads.sort(key = lambda x: x.pid)
-  threads = threads [1:]
-  for j in range (1, 5):
-    stats[i].ipc += threads[i].get_ipc()
-  stats.sort(key = lambda x: x.ipc)
-  stats2[0] += result[0]
-  stats2[1] += result[1]
-stats2[0] /= 10.0
-stats2[1] /= 10.0
-print 'OPTIMAL'
-print 'pid', 'ipc'
-for s in stats:
-  s.ipc /= 10.0
-  print s.pid, s.ipc
-print 'overallIPC', 'runtime'
-print stats2[0], stats2[1]
+def run(order, conf):
+  args = ' '.join(sys.argv[1:])
+  command = ('../bin/m2s --x86-config cpu-config --x86-sim detailed --mem-config updated_hetero_mem_config '+ args + order_toArgs(order)).split()
+
+  stats = [State(i, 0.0) for i in range(1, 5)]
+  stats2 = [0.0, 0.0]
+  for i in range(1, 11):
+    print '===%s configuration===: %d' %(conf, i)
+    run_program(command)
+
+    threads = get_threads(filename)
+    result = get_stat(filename)
+
+    for j in range (1, 5):
+      stats[i].ipc += threads[i].get_ipc()
+    stats.sort(key = lambda x: x.ipc)
+
+    stats2[0] += result[0]
+    stats2[1] += result[1]
+
+  stats2[0] /= 10.0
+  stats2[1] /= 10.0
+  print  conf
+  print 'pid', 'ipc'
+  for s in stats:
+    s.ipc /= 10.0
+    print s.pid, s.ipc
+  print 'overallIPC', 'runtime'
+  print stats2[0], stats2[1]
+
+
+#Default
+run(order = DEFAULT_ORDER, conf = 'Default')
+
+#Optimal
+run(order = OPTIMAL_ORDER, conf = 'Optimal')
