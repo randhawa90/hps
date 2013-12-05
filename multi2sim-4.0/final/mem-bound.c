@@ -71,7 +71,7 @@ typedef void * (*func) (void*a);
 int main(int argc, char** argv) {
   int order[4];
   int i;
-  func funcs[4] = { matrixmult_big, matrixmult_mid, matrixmult_mid, matrixmult_small};
+  func funcs[4] = { matrixmult_small, matrixmult_mid, matrixmult_mid, matrixmult_big};
   for(i = 0; i< 4; i ++ ) {
     order[i] = atoi(argv[i + 1]);
   }
