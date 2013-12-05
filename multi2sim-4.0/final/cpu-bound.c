@@ -40,13 +40,18 @@ void* pi(void *a) {
   return NULL;
 }
 
-int main() {
+int main(int argc, char** argv) {
   pthread_t pid[4];
   int num_points = 0;
   int num_circle_count = 0;
   int i;
+  int order[4] = {0};
+  for(i =0; i< 4; i ++ ) {
+    order[i] = atoi(argv[i+1]);
+  }
   for(i = 0; i < 4; i ++ )  {
-    pthread_create(&pid[i], NULL, pi, (void*)i);
+    printf("create a thread to throw %d points\n", npoints[order[i]]);
+    pthread_create(&pid[i], NULL, pi, (void*)order[i]);
     num_points += npoints[i];
   }
   for(i = 0; i < 4; i ++ ) {
