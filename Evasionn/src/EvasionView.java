@@ -30,6 +30,7 @@ import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.JTextField;
 
 
 public class EvasionView extends JApplet implements EvasionListener{
@@ -41,7 +42,7 @@ public class EvasionView extends JApplet implements EvasionListener{
   private final int multiplier = 2;
   private final long wait = 50;
   private static final long serialVersionUID = 7599154223148422979L;
-  private boolean gameWon = true;
+  private boolean gameWon = false;
   Object lock = new Object();
   class GPanel extends JPanel {
     /**
@@ -93,6 +94,9 @@ public class EvasionView extends JApplet implements EvasionListener{
         Point2D drawHunter = new Point2D.Double(hunterPosition.getX()*multiplier,hunterPosition.getY()*multiplier);
         g2d.draw(new Line2D.Float(drawHunter,drawHunter));
       }
+      
+      setFocusable(true);
+      requestFocusInWindow();
     }
   }
   EvasionModel model = null;
@@ -136,30 +140,6 @@ public class EvasionView extends JApplet implements EvasionListener{
   JComboBox<String> WList = new JComboBox<String>(wstrings);
   //
 
-  //
-//  class RadioActionListener implements ActionListener {
-//    int id = 0;
-//    public RadioActionListener(int id) {
-//      this.id = id;
-//    }
-//    public void actionPerformed(ActionEvent e) {
-//      if(this.id == 0) {// hunter
-//        if ("Computer".equals(e.getActionCommand())) {
-//          super.hunter = COMPUTER;
-//        }else {
-//          super.hunter = HUMAN;
-//        }
-//      }
-//      else {
-//        if ("Computer".equals(e.getActionCommand())) {
-//          super.prey = COMPUTER;
-//        }else {
-//          super.prey = HUMAN;
-//        }
-//      }
-//    }
-//  }
-  
   
   ButtonGroup hunterBG = new ButtonGroup();
   JRadioButton hunterComputer = new JRadioButton("Computer");
@@ -300,6 +280,9 @@ public class EvasionView extends JApplet implements EvasionListener{
     controlPanel.add(preyHuman);
     controlPanel.add(startButton);
     controlPanel.add(resetButton);
+    //JTextField ta = new JTextField(10);
+    //ta.addKeyListener(new KeyHandler());
+    //controlPanel.add(ta);
 
     try {
       UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -325,7 +308,6 @@ public class EvasionView extends JApplet implements EvasionListener{
         }
     );
     imageUpdater.start();
-    addKeyListener(new KeyHandler());
     setVisible(true);
     setFocusable(true);
   }
@@ -337,18 +319,19 @@ public class EvasionView extends JApplet implements EvasionListener{
     time_counter = 0;
     move_counter = 0;
     hunterDirection = HunterMoves.SE;
-    walls = new ArrayList<Line2D>();
+    //walls = new ArrayList<Line2D>();
 
-    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+    //UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
     gameDescription = new JTextArea();
-    mainPanel = new GPanel();
-    mainPanel.setSize(400, 400);
-    mainPanel.setBackground(Color.WHITE);
+    //gamePanel.setSize(400, 400);
+    //gamePanel.setBackground(Color.WHITE);
     //    mainPanel.setBovvv   rder(BorderFactory.createLineBorder(Color.black, 1));
-    mainPanel.setVisible(true);
-//    mainPanel.setFocusable(true);
-    frameContainer.add(mainPanel,BorderLayout.CENTER);
-    frameContainer.add(gameDescription,BorderLayout.NORTH);
+    //gamePanel.setVisible(true);
+    mainPanel.setFocusable(true);
+    mainPanel.requestFocusInWindow();
+    mainPanel.addKeyListener(new KeyHandler());
+    //frameContainer.add(mainPanel,BorderLayout.CENTER);
+    //frameContainer.add(gameDescription,BorderLayout.NORTH);
 //    new SwingWorker<Integer, Integer>() {
 //      @Override
 //      protected Integer doInBackground() throws Exception {
@@ -447,26 +430,7 @@ public class EvasionView extends JApplet implements EvasionListener{
     long val = System.currentTimeMillis() - time;
     Prey.make_move(move, val > wait? 0 : val);
   }
-  
-  /*
-  public EvasionView(EvasionModel model, int N, int W) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
-    this.model = model;
-    this.N = N;
-    this.W = W;
-    frame = new JFrame("Evasion");
-    Container frameContainer = frame.getContentPane();
-    frame.setSize(510, 540);
-    frame.setMaximumSize(new Dimension(520, 520));
-    frame.setLocation(200, 200);
-    //    frame.setExtendedState(JFrame.);
-    frame.setVisible(true);
-    frame.setResizable(false);
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.setVisible(true);
-    this._init_container(frameContainer);
-  }
 
-   */
   @Override
   public void hunter_moved(HunterMove move, final String message) {
     move_counter++;
@@ -484,25 +448,11 @@ public class EvasionView extends JApplet implements EvasionListener{
     }
     hunterDirection = move.move;
     gameDescription.setText(displayString.getText() + move_counter + message);
-//    new SwingWorker<Integer, Integer>() {
-//      @Override
-//      protected Integer doInBackground() throws Exception {
-//        repaint();
-//        return 0;
-//      }
-//    }.execute();
   }
 
   @Override
   public void prey_moved(Point2D move) {
     preyPosition = move;
-//    new SwingWorker<Integer, Integer>() {
-//      @Override
-//      protected Integer doInBackground() throws Exception {
-//        repaint();
-//        return 0;
-//      }
-//    }.execute();
   }
 
   @Override
@@ -582,13 +532,15 @@ public class EvasionView extends JApplet implements EvasionListener{
   }
 
   private class KeyHandler implements KeyListener {
-  
   @Override
   public void keyPressed(KeyEvent e) {
+    System.out.println(gameWon + "");
+    System.out.println("key press" + e.getKeyChar());
     if (gameWon) {
       return;
     }
     char c = e.getKeyChar();
+    System.out.println("Press Key " + c);
     PreyMoves pMove = PreyMoves.ZZ;
     HunterMove hMove = new HunterMove();
     hMove.move = hunterDirection;
