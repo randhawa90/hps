@@ -249,7 +249,7 @@ public class EvasionModel {
 				coords[2] = move.end.getX();
 				coords[3] = move.end.getY();
 				for (double d : coords) {
-					if (0 - d > epsilon || d - 499 > epsilon) {
+					if (0 - d > epsilon || d - 199 > epsilon) {
 						outOfBounds = true;
 						break;
 					}
@@ -290,10 +290,10 @@ public class EvasionModel {
 
 	private Point2D updateHunterPosAndDir() {
 		try {
-			walls.add(new Line2D.Float(-1,-1,500,-1));
-			walls.add(new Line2D.Float(-1,-1,-1,500));
-			walls.add(new Line2D.Float(-1,500,500,500));
-			walls.add(new Line2D.Float(500,-1,500,500));
+			walls.add(new Line2D.Float(-1,-1,200,-1));
+			walls.add(new Line2D.Float(-1,-1,-1,200));
+			walls.add(new Line2D.Float(-1,200,200,200));
+			walls.add(new Line2D.Float(200,-1,200,200));
 			Point2D movedTo;
 			switch (hunterDirection) {
 			case NE:
@@ -523,10 +523,10 @@ public class EvasionModel {
 
 	public synchronized Point2D makePreyMove(PreyMoves move) {
 		try {
-			walls.add(new Line2D.Float(-1,-1,500,-1));
-			walls.add(new Line2D.Float(-1,-1,-1,500));
-			walls.add(new Line2D.Float(-1,500,500,500));
-			walls.add(new Line2D.Float(500,-1,500,500));
+			walls.add(new Line2D.Float(-1,-1,200,-1));
+			walls.add(new Line2D.Float(-1,-1,-1,200));
+			walls.add(new Line2D.Float(-1,200,200,200));
+			walls.add(new Line2D.Float(200,-1,200,200));
 			Point2D movedTo;
 			switch (move) {
 			case ZZ:
