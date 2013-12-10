@@ -324,7 +324,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     mainPanel = new GPanel();
     mainPanel.setSize(400, 400);
     mainPanel.setBackground(Color.WHITE);
-    //    mainPanel.setBorder(BorderFactory.createLineBorder(Color.black, 1));
+    //    mainPanel.setBovvv   rder(BorderFactory.createLineBorder(Color.black, 1));
     mainPanel.setVisible(true);
     mainPanel.setFocusable(true);
     frameContainer.add(mainPanel,BorderLayout.CENTER);
@@ -463,7 +463,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     new SwingWorker<Integer, Integer>() {
       @Override
       protected Integer doInBackground() throws Exception {
-        getContentPane().repaint();
+        repaint();
         gameDescription.setText(displayString.getText() + move_counter + message);
         return 0;
       }
@@ -476,7 +476,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     new SwingWorker<Integer, Integer>() {
       @Override
       protected Integer doInBackground() throws Exception {
-        mainPanel.repaint();
+        repaint();
         return 0;
       }
     }.execute();
@@ -566,8 +566,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     HunterMove hMove = new HunterMove();
     hMove.move = hunterDirection;
     switch(c) {
-    case 'h':
-    case 'H':
+    case KeyEvent.VK_H:
       Line2D hWall = new Line2D.Float(0, (float)hunterPosition.getY(), 199, (float)hunterPosition.getY());
       {
         float top = 0;
@@ -595,8 +594,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
       hMove.move = HunterMoves.valueOf(hunterDirection.toString() + 'w');
       break;
       
-    case 'v':
-    case 'V':
+    case KeyEvent.VK_V:
       Line2D vWall = new Line2D.Float((float)hunterPosition.getX(), 0, (float)hunterPosition.getX(), 199);
       {
         float top = 0;
@@ -624,14 +622,12 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
       hMove.move = HunterMoves.valueOf(hunterDirection.toString() + 'w');
       break;
      
-    case 'z':
-    case 'Z':
+    case KeyEvent.VK_Z:
       hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "wx");
       hMove.wallNumber = 0;
       break;
       
-    case 'x':
-    case 'X':
+    case KeyEvent.VK_X:
       hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "wx");
       hMove.wallNumber = walls.size() - 1;
       break;
