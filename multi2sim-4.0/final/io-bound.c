@@ -42,16 +42,21 @@ void * read_thread(void *filename) {
 }
 
 
-int main() {
+int main(int argc, char** argv) {
   char* filenames[] = {"file1",
              "file2", 
              "file3",
              "file4"};
 
-  pthread_t thread_id[4];
   int i = 0;
+  int order[4] = {0};
+  for(i =0; i< 4; i ++ ) {
+    order[i] = atoi(argv[i+1]);
+  }
+  pthread_t thread_id[4];
   for(i = 0; i < 4; i ++ ) {
-    pthread_create(&thread_id[i], NULL, read_thread, (void*) filenames[i]);
+    printf("create a thread to read file %s\n", filenames[order[i]]);
+    pthread_create(&thread_id[i], NULL, read_thread, (void*) filenames[order[i]]);
   }
 
   for(i = 0; i < 4; i ++ ) {

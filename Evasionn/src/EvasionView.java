@@ -9,16 +9,22 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+<<<<<<< HEAD
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+=======
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
 
+<<<<<<< HEAD
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JApplet;
+=======
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -30,7 +36,12 @@ import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import java.applet.*;
+import java.awt.*;
 
+import javax.swing.*;
+
+<<<<<<< HEAD
 public class EvasionView extends JApplet implements EvasionListener, KeyListener{
   /**
    * 
@@ -40,6 +51,10 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
   private final long wait = 50;
   private static final long serialVersionUID = 7599154223148422979L;
   private boolean gameWon = false;
+=======
+
+public class EvasionView extends JApplet implements EvasionListener{
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
   Object lock = new Object();
   class GPanel extends JPanel {
     /**
@@ -88,7 +103,11 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
       }
     }
   }
+<<<<<<< HEAD
   EvasionModel model = null;
+=======
+  final EvasionModel model = null;
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
   String name;
   long move_counter;
   long time_counter;
@@ -120,13 +139,21 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
   JLabel preyLabel = new JLabel("PreyLabel");
 
   String[] nstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
+<<<<<<< HEAD
   JComboBox<String> NList = new JComboBox<String>(nstrings);
+=======
+  JComboBox NList = new JComboBox(nstrings);
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
   //
 
   //
 
   String[] wstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
+<<<<<<< HEAD
   JComboBox<String> WList = new JComboBox<String>(wstrings);
+=======
+  JComboBox WList = new JComboBox(wstrings);
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
   //
 
   //
@@ -175,7 +202,11 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     NList.setSelectedIndex(0);
     NList.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
+<<<<<<< HEAD
         JComboBox<String> cb = (JComboBox<String>)e.getSource();
+=======
+        JComboBox cb = (JComboBox)e.getSource();
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
         String str = (String)cb.getSelectedItem();
         N = Integer.parseInt(str);
       }
@@ -185,7 +216,11 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     WList.setSelectedIndex(1);
     WList.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
+<<<<<<< HEAD
         JComboBox<String> cb = (JComboBox<String>)e.getSource();
+=======
+        JComboBox cb = (JComboBox)e.getSource();
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
         String str = (String)cb.getSelectedItem();
         W = Integer.parseInt(str);
       }
@@ -247,6 +282,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
         prey = COMPUTER;
         N = 3;
         W = 3;
+<<<<<<< HEAD
         hunterComputer.setSelected(true);
         preyComputer.setSelected(true);
         repaint();
@@ -268,12 +304,22 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     }
         );
     
+=======
+      }
+    }
+        );
+
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
     //
     Container container = getContentPane();
     container.setBackground(Color.WHITE);
     container.setLayout(new BorderLayout());
     container.add(displayString, BorderLayout.PAGE_START);
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
     JPanel gamePanel = new JPanel();
     container.add(gamePanel, BorderLayout.CENTER);
 
@@ -292,6 +338,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     controlPanel.add(preyHuman);
     controlPanel.add(startButton);
     controlPanel.add(resetButton);
+<<<<<<< HEAD
 
     try {
       UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -312,6 +359,12 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
 
   public void _init_container(Container frameContainer) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, IOException {
     preyPosition = new Point(130*multiplier,100*multiplier);
+=======
+  }
+
+  public void _init_container(Container frameContainer) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
+    preyPosition = new Point(330,200);
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
     hunterPosition = new Point(0, 0);
     moves_to_next_wall = N;
     time_counter = 0;
@@ -326,6 +379,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     mainPanel.setBackground(Color.WHITE);
     //    mainPanel.setBorder(BorderFactory.createLineBorder(Color.black, 1));
     mainPanel.setVisible(true);
+<<<<<<< HEAD
     mainPanel.setFocusable(true);
     frameContainer.add(mainPanel,BorderLayout.CENTER);
     frameContainer.add(gameDescription,BorderLayout.NORTH);
@@ -425,6 +479,11 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     Prey.make_move(move, val > wait? 0 : val);
   }
   
+=======
+    frameContainer.add(mainPanel,BorderLayout.CENTER);
+    frameContainer.add(gameDescription,BorderLayout.NORTH);
+  }
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
   /*
   public EvasionView(EvasionModel model, int N, int W) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
     this.model = model;
@@ -463,7 +522,11 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     new SwingWorker<Integer, Integer>() {
       @Override
       protected Integer doInBackground() throws Exception {
+<<<<<<< HEAD
         getContentPane().repaint();
+=======
+        frame.getContentPane().validate();frame.getContentPane().repaint();
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
         gameDescription.setText(displayString.getText() + move_counter + message);
         return 0;
       }
@@ -484,7 +547,10 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
 
   @Override
   public void prey_caught(long no_of_moves) {
+<<<<<<< HEAD
     gameWon = true;
+=======
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
     gameDescription.setText(displayString.getText() + ++move_counter + "Hunter Won!!!");
   }
 
@@ -494,7 +560,12 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
     new SwingWorker<Integer, Integer>() {
       @Override
       protected Integer doInBackground() throws Exception {
+<<<<<<< HEAD
         repaint();
+=======
+        mainPanel.repaint();
+        frame.repaint();
+>>>>>>> b589b289eaed25d7c6172fa0189e57e5f8162c9e
         gameDescription.setText(displayString.getText() + move_counter);
         return 0;
       }
