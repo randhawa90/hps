@@ -1,25 +1,46 @@
+import java.awt.Point;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.swing.SwingWorker;
 
 
-public class Prey extends PlayerServer implements EvasionListener {
-
-  public Prey(EvasionModel model, int N, int W, long totalTime, int portNumber) {
-    super(model, N, W, totalTime, portNumber);
+public class Prey  implements EvasionListener {
+  final EvasionModel model;
+  String name;
+  int move_counter;
+  long time_counter;
+  final int N;
+  final int W;
+  int moves_to_next_wall;
+  Point2D preyPosition;
+  Point2D hunterPosition;
+  HunterMoves hunterDirection;
+  ArrayList<Line2D> walls;
+  public Prey(EvasionModel model, int N, int W) {
+//    super(model, N, W, totalTime, portNumber);
+    this.model = model;
+    this.N = N;
+    this.W = W;
+    preyPosition = new Point(130,100);
+    hunterPosition = new Point(0, 0);
+    moves_to_next_wall = N;
+    move_counter = 0;
+    hunterDirection = HunterMoves.SE;
+    walls = new ArrayList<Line2D>();
   }
   
+  public void make_move(PreyMoves move,long wait) throws IOException {
+    long time = System.currentTimeMillis();
+    while(System.currentTimeMillis() - time < wait);
+    model.preyMove(move);
+  }
+
   public void make_move() throws IOException {
-    send_details();
-    char[] move = get_move().toCharArray();
-    if (move[0] == 'T') {
-      model.preyTimeOver();
-    }
-    else {
-      model.preyMove(convertToMove(move));
-    }
+    PreyMoves move = PreyMoves.ZZ;
+    model.preyMove(move);
   }
 
   @Override
@@ -38,15 +59,6 @@ public class Prey extends PlayerServer implements EvasionListener {
       walls.remove(move.wallNumber-1);
     }
     hunterDirection = move.move;
-    if ((move_counter%2) == 0) {
-      new SwingWorker<Integer, Integer>() {
-        @Override
-        protected Integer doInBackground() throws Exception {
-          make_move();
-          return 0;
-        }
-      }.execute();
-    }
   }
 
   @Override
@@ -56,13 +68,6 @@ public class Prey extends PlayerServer implements EvasionListener {
 
   @Override
   public void prey_caught(long no_of_moves) {
-    new SwingWorker<Integer, Integer>() {
-      @Override
-      protected Integer doInBackground() throws Exception {
-        close_conn_game_over("You Lost!!!");
-        return 0;
-      }
-    }.execute();
   }
 
   @Override
@@ -77,24 +82,6 @@ public class Prey extends PlayerServer implements EvasionListener {
 
   @Override
   public void time_over(long no_of_moves, final char player) {
-    new SwingWorker<Integer, Integer>() {
-      @Override
-      protected Integer doInBackground() throws Exception {
-        switch (player) {
-          case 'h':
-            close_conn_game_over("Hunter Timed Out!!!");
-            break;
-
-          case 'p':
-            close_conn_game_over("You Timed Out!!!");
-            break;
-
-          default:
-            break;
-        }
-        return 0;
-      }
-    }.execute();
   }
 
   @Override
@@ -102,40 +89,4 @@ public class Prey extends PlayerServer implements EvasionListener {
     return name;
   }
 
-  PreyMoves convertToMove(char[] move) {
-    if (move.length < 2) {
-      return PreyMoves.ZZ;
-    }
-    switch (move[0]+move[1]) {
-      case 'N'+'N':
-        return PreyMoves.NN;
-
-      case 'S'+'S':
-        return PreyMoves.SS;
-
-      case 'W'+'W':
-        return PreyMoves.WW;
-
-      case 'E'+'E':
-        return PreyMoves.EE;
-
-      case 'N'+'E':
-        return PreyMoves.NE;
-
-      case 'N'+'W':
-        return PreyMoves.NW;
-
-      case 'S'+'E':
-        return PreyMoves.SE;
-
-      case 'S'+'W':
-        return PreyMoves.SW;
-
-      case 'Z'+'Z':
-        return PreyMoves.ZZ;
-
-      default:
-        return PreyMoves.ZZ;
-    }
-  }
 }

@@ -23,7 +23,15 @@ public class EvasionModel {
 	volatile long moveUnitCounter;
 	int nextWallTimeLeft;
 	boolean hunterReady;
-	boolean preyReady;
+	public boolean isHunterReady() {
+    return hunterReady;
+  }
+
+  public boolean isPreyReady() {
+    return preyReady;
+  }
+
+  boolean preyReady;
 	boolean gameStarted;
 	long waitMillis;
 	Object lock;
@@ -34,7 +42,7 @@ public class EvasionModel {
 		this.waitMillis = waitMillis;
 		nextWallTimeLeft = n;
 		hunterPosition = new Point(0, 0);
-		preyPosition = new Point(330, 200);
+		preyPosition = new Point(130, 100);
 		hunterDirection = HunterMoves.SE;
 		walls = new ArrayList<Line2D>();
 		lock = new Object();
@@ -50,18 +58,18 @@ public class EvasionModel {
 	public void hunterReady() throws IOException {
 		synchronized (lock) {
 			hunterReady = true;
-			if (preyReady) {
-				startGame();
-			}
+//			if (preyReady) {
+//				startGame();
+//			}
 		}
 	}
 
 	public void preyReady() throws IOException {
 		synchronized (lock) {
 			preyReady = true;
-			if (hunterReady) {
-				startGame();
-			}
+//			if (hunterReady) {
+//				startGame();
+//			}
 		}
 	}
 
