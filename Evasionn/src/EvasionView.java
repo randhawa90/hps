@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
+import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -36,6 +37,7 @@ public class EvasionView extends JApplet implements EvasionListener{
    * 
    */
 //  EvasionModel model;
+  Timer imageUpdater;
   private final int multiplier = 2;
   private final long wait = 50;
   private static final long serialVersionUID = 7599154223148422979L;
@@ -255,7 +257,7 @@ public class EvasionView extends JApplet implements EvasionListener{
         hunterComputer.setSelected(true);
         preyComputer.setSelected(true);
         gameWon = true;
-        repaint();
+//        repaint();
       }
     }
         );
@@ -314,6 +316,15 @@ public class EvasionView extends JApplet implements EvasionListener{
       // TODO Auto-generated catch block
       e1.printStackTrace();
     }
+    int repaintInterval = 100;
+    imageUpdater = new Timer(repaintInterval,
+        new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                repaint();
+            }
+        }
+    );
+    imageUpdater.start();
     addKeyListener(new KeyHandler());
     setVisible(true);
     setFocusable(true);
@@ -335,13 +346,13 @@ public class EvasionView extends JApplet implements EvasionListener{
     mainPanel.setBackground(Color.WHITE);
     //    mainPanel.setBovvv   rder(BorderFactory.createLineBorder(Color.black, 1));
     mainPanel.setVisible(true);
-    mainPanel.setFocusable(true);
+//    mainPanel.setFocusable(true);
     frameContainer.add(mainPanel,BorderLayout.CENTER);
     frameContainer.add(gameDescription,BorderLayout.NORTH);
 //    new SwingWorker<Integer, Integer>() {
 //      @Override
 //      protected Integer doInBackground() throws Exception {
-        frameContainer.repaint();
+//        frameContainer.repaint();
         gameDescription.setText(displayString.getText() + move_counter);
         begin();
 //        return 0;
@@ -472,26 +483,26 @@ public class EvasionView extends JApplet implements EvasionListener{
       }
     }
     hunterDirection = move.move;
-    new SwingWorker<Integer, Integer>() {
-      @Override
-      protected Integer doInBackground() throws Exception {
-        repaint();
-        gameDescription.setText(displayString.getText() + move_counter + message);
-        return 0;
-      }
-    }.execute();
+    gameDescription.setText(displayString.getText() + move_counter + message);
+//    new SwingWorker<Integer, Integer>() {
+//      @Override
+//      protected Integer doInBackground() throws Exception {
+//        repaint();
+//        return 0;
+//      }
+//    }.execute();
   }
 
   @Override
   public void prey_moved(Point2D move) {
     preyPosition = move;
-    new SwingWorker<Integer, Integer>() {
-      @Override
-      protected Integer doInBackground() throws Exception {
-        repaint();
-        return 0;
-      }
-    }.execute();
+//    new SwingWorker<Integer, Integer>() {
+//      @Override
+//      protected Integer doInBackground() throws Exception {
+//        repaint();
+//        return 0;
+//      }
+//    }.execute();
   }
 
   @Override
@@ -503,14 +514,14 @@ public class EvasionView extends JApplet implements EvasionListener{
   @Override
   public void game_started(final String hunterName,final String preyName) {
     displayString.setText("Hunter " + hunterName + " vs Prey " + preyName +". Moves:");
-    new SwingWorker<Integer, Integer>() {
-      @Override
-      protected Integer doInBackground() throws Exception {
-        repaint();
-        gameDescription.setText(displayString.getText() + move_counter);
-        return 0;
-      }
-    }.execute();
+    gameDescription.setText(displayString.getText() + move_counter);
+//    new SwingWorker<Integer, Integer>() {
+//      @Override
+//      protected Integer doInBackground() throws Exception {
+//        repaint();
+//        return 0;
+//      }
+//    }.execute();
   }
 
   @Override
@@ -522,25 +533,25 @@ public class EvasionView extends JApplet implements EvasionListener{
   @Override
   public void time_over(long no_of_moves, final char player) {
     move_counter = no_of_moves;
-    new SwingWorker<Integer, Integer>() {
-      @Override
-      protected Integer doInBackground() throws Exception {
-        switch (player) {
-        case 'h':
-          gameDescription.setText(displayString.getText() + move_counter +"Hunter Timed Out!!!");
-          break;
+    switch (player) {
+    case 'h':
+      gameDescription.setText(displayString.getText() + move_counter +"Hunter Timed Out!!!");
+      break;
 
-        case 'p':
-          gameDescription.setText(displayString.getText() + move_counter+"Prey Timed Out!!!");
-          break;
+    case 'p':
+      gameDescription.setText(displayString.getText() + move_counter+"Prey Timed Out!!!");
+      break;
 
-        default:
-          break;
-        }
-        repaint();
-        return 0;
-      }
-    }.execute();
+    default:
+      break;
+    }
+//    new SwingWorker<Integer, Integer>() {
+//      @Override
+//      protected Integer doInBackground() throws Exception {
+//        repaint();
+//        return 0;
+//      }
+//    }.execute();
   }
 
   @Override
