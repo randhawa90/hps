@@ -30,6 +30,7 @@ import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.JTextField;
 
 
 public class EvasionView extends JApplet implements EvasionListener{
@@ -118,7 +119,6 @@ public class EvasionView extends JApplet implements EvasionListener{
   JFrame frame;
   GPanel mainPanel = new GPanel();
   JTextArea gameDescription;
-  JButton hunterButton;
 
   /* attributes needed by the game */
   final static int HUMAN = 0;
@@ -128,47 +128,20 @@ public class EvasionView extends JApplet implements EvasionListener{
   int hunter = COMPUTER;
   int prey = COMPUTER;
 
-  String hunterName;
-  String preyName;
 
-  /* GUI components */
+  JTextField hunterTF = new JTextField(5);
+  JTextField preyTF = new JTextField(5);
+  
+
   JLabel displayString = new JLabel("DisplayLabel");
   JLabel hunterLabel = new JLabel("HunterLabel");
   JLabel preyLabel = new JLabel("PreyLabel");
 
   String[] nstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox<String> NList = new JComboBox<String>(nstrings);
-  //
-
-  //
 
   String[] wstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox<String> WList = new JComboBox<String>(wstrings);
-  //
-
-  //
-  //  class RadioActionListener implements ActionListener {
-  //    int id = 0;
-  //    public RadioActionListener(int id) {
-  //      this.id = id;
-  //    }
-  //    public void actionPerformed(ActionEvent e) {
-  //      if(this.id == 0) {// hunter
-  //        if ("Computer".equals(e.getActionCommand())) {
-  //          super.hunter = COMPUTER;
-  //        }else {
-  //          super.hunter = HUMAN;
-  //        }
-  //      }
-  //      else {
-  //        if ("Computer".equals(e.getActionCommand())) {
-  //          super.prey = COMPUTER;
-  //        }else {
-  //          super.prey = HUMAN;
-  //        }
-  //      }
-  //    }
-  //  }
 
 
   ButtonGroup hunterBG = new ButtonGroup();
@@ -186,6 +159,8 @@ public class EvasionView extends JApplet implements EvasionListener{
   JButton startButton = new JButton("Start");
   JButton resetButton = new JButton("Reset");
   //
+  String hunterName = "Computer";
+  String preyName = "Computer";
 
   //
   public void init() {
@@ -196,6 +171,7 @@ public class EvasionView extends JApplet implements EvasionListener{
         JComboBox<String> cb = (JComboBox<String>)e.getSource();
         String str = (String)cb.getSelectedItem();
         N = Integer.parseInt(str);
+        //System.out.println("Choose " + str + " for N");
       }
     }
         );
@@ -205,6 +181,7 @@ public class EvasionView extends JApplet implements EvasionListener{
       public void actionPerformed(ActionEvent e) {
         JComboBox<String> cb = (JComboBox<String>)e.getSource();
         String str = (String)cb.getSelectedItem();
+        //System.out.println("Choose " + str + " for N");
         W = Integer.parseInt(str);
       }
     }
@@ -275,6 +252,14 @@ public class EvasionView extends JApplet implements EvasionListener{
     startButton.addActionListener( new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         //        try {
+        String tmp = hunterTF.getText();
+        if ( tmp != null && tmp != "") {
+          hunterName = tmp;
+        }
+        tmp = preyTF.getText();
+        if ( tmp != null && tmp != "") {
+          preyName = tmp;
+        }
         new SwingWorker<Integer, Integer>() {
           @Override
           protected Integer doInBackground() throws Exception {
@@ -298,25 +283,39 @@ public class EvasionView extends JApplet implements EvasionListener{
 
     gamePanel.setLayout(new FlowLayout());
     gameDescription = new JTextArea();
-    //  mainPanel = new GPanel();
     mainPanel.setSize(400, 400);
     mainPanel.setBackground(Color.WHITE);
-    //    mainPanel.setBovvv   rder(BorderFactory.createLineBorder(Color.black, 1));
     mainPanel.setVisible(true);
     mainPanel.setFocusable(true);
     gamePanel.add(mainPanel,BorderLayout.CENTER);
-    gamePanel.add(gameDescription,BorderLayout.NORTH);
-    //  new SwingWorker<Integer, Integer>() {
-    //    @Override
-    //    protected Integer doInBackground() throws Exception {
-    //      frameContainer.repaint();
-    gameDescription.setText(displayString.getText() + move_counter);
-    gamePanel.add(mainPanel);
+    //gamePanel.add(gameDescription,BorderLayout.NORTH);
+    //gameDescription.setText(displayString.getText() + move_counter);
     JPanel controlPanel = new JPanel();
     gamePanel.add(controlPanel);
     controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-    controlPanel.add(NList);
-    controlPanel.add(WList);
+    JPanel hunterNamePanel = new JPanel();
+    hunterNamePanel.setLayout(new FlowLayout());
+    hunterNamePanel.add(new JLabel("HunterName"));
+    hunterNamePanel.add(hunterTF);
+
+    JPanel preyNamePanel = new JPanel();
+    preyNamePanel.setLayout(new FlowLayout());
+    preyNamePanel.add(new JLabel("PreyName"));
+    preyNamePanel.add(preyTF);
+
+    controlPanel.add(hunterNamePanel);
+    controlPanel.add(preyNamePanel);
+
+    JPanel NListPanel = new JPanel();
+    NListPanel.setLayout(new FlowLayout());
+    NListPanel.add(new JLabel("Choose N"));
+    NListPanel.add(NList);
+    JPanel WListPanel = new JPanel();
+    WListPanel.setLayout(new FlowLayout());
+    WListPanel.add(new JLabel("Choose W"));
+    WListPanel.add(WList);
+    controlPanel.add(NListPanel);
+    controlPanel.add(WListPanel);
     controlPanel.add(hunterLabel);
     controlPanel.add(hunterComputer);
     controlPanel.add(hunterHuman);
