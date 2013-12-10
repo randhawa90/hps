@@ -37,7 +37,6 @@ public class EvasionView extends JApplet implements EvasionListener{
   /**
    * 
    */
-  //  EvasionModel model;
   public String winner = "not set";
   public String winnerScore = "not set";
   public String getWinner() {
@@ -49,7 +48,7 @@ public class EvasionView extends JApplet implements EvasionListener{
   }
   Timer imageUpdater;
   private final int multiplier = 2;
-  private final long wait = 300;
+  private final long wait = 50;
   private static final long serialVersionUID = 7599154223148422979L;
   private boolean gameWon = true;
   Object lock = new Object();
@@ -119,6 +118,7 @@ public class EvasionView extends JApplet implements EvasionListener{
   JFrame frame;
   GPanel mainPanel = new GPanel();
   JTextArea gameDescription;
+  JButton hunterButton;
 
   /* attributes needed by the game */
   final static int HUMAN = 0;
@@ -129,40 +129,27 @@ public class EvasionView extends JApplet implements EvasionListener{
   int prey = COMPUTER;
 
 
+  /* GUI components */
   JTextField hunterTF = new JTextField(5);
   JTextField preyTF = new JTextField(5);
-  
-
-  JLabel displayString = new JLabel("DisplayLabel");
   JLabel hunterLabel = new JLabel("HunterLabel");
   JLabel preyLabel = new JLabel("PreyLabel");
-
   String[] nstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox<String> NList = new JComboBox<String>(nstrings);
-
   String[] wstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox<String> WList = new JComboBox<String>(wstrings);
-
-
   ButtonGroup hunterBG = new ButtonGroup();
   JRadioButton hunterComputer = new JRadioButton("Computer");
   JRadioButton hunterHuman = new JRadioButton("Human");
-  //
-
-  //
   ButtonGroup preyBG = new ButtonGroup();
   JRadioButton preyComputer = new JRadioButton("Computer");
   JRadioButton preyHuman = new JRadioButton("Human");
-  //
-
-  //
-  JButton startButton = new JButton("Start");
-  JButton resetButton = new JButton("Reset");
-  //
   String hunterName = "Computer";
   String preyName = "Computer";
+  JButton startButton = new JButton("Start");
+  JButton resetButton = new JButton("Reset");
 
-  //
+
   public void init() {
     resize(550 , 480);
     NList.setSelectedIndex(0);
@@ -171,7 +158,6 @@ public class EvasionView extends JApplet implements EvasionListener{
         JComboBox<String> cb = (JComboBox<String>)e.getSource();
         String str = (String)cb.getSelectedItem();
         N = Integer.parseInt(str);
-        //System.out.println("Choose " + str + " for N");
       }
     }
         );
@@ -181,7 +167,6 @@ public class EvasionView extends JApplet implements EvasionListener{
       public void actionPerformed(ActionEvent e) {
         JComboBox<String> cb = (JComboBox<String>)e.getSource();
         String str = (String)cb.getSelectedItem();
-        //System.out.println("Choose " + str + " for N");
         W = Integer.parseInt(str);
       }
     }
@@ -242,10 +227,17 @@ public class EvasionView extends JApplet implements EvasionListener{
         prey = COMPUTER;
         N = 3;
         W = 3;
+        NList.setEnabled(true);
+        WList.setEnabled(true);
+        hunterHuman.setEnabled(true);
+        hunterComputer.setEnabled(true);
+        preyHuman.setEnabled(true);
+        preyComputer.setEnabled(true);
         hunterComputer.setSelected(true);
         preyComputer.setSelected(true);
+        hunterTF.setEnabled(true);
+        preyTF.setEnabled(true);
         gameWon = true;
-        //        repaint();
       }
     }
         );
@@ -260,6 +252,14 @@ public class EvasionView extends JApplet implements EvasionListener{
         if ( tmp != null && tmp != "") {
           preyName = tmp;
         }
+        hunterTF.setEnabled(false);
+        preyTF.setEnabled(false);
+        NList.setEnabled(false);
+        WList.setEnabled(false);
+        hunterHuman.setEnabled(false);
+        hunterComputer.setEnabled(false);
+        preyHuman.setEnabled(false);
+        preyComputer.setEnabled(false);
         new SwingWorker<Integer, Integer>() {
           @Override
           protected Integer doInBackground() throws Exception {
@@ -272,40 +272,27 @@ public class EvasionView extends JApplet implements EvasionListener{
     }
         );
 
-    //
     Container container = getContentPane();
     container.setBackground(Color.WHITE);
     container.setLayout(new BorderLayout());
-    container.add(displayString, BorderLayout.PAGE_START);
-
+    gameDescription = new JTextArea();
+    container.add(gameDescription, BorderLayout.PAGE_START);
     JPanel gamePanel = new JPanel();
     container.add(gamePanel, BorderLayout.CENTER);
-
     gamePanel.setLayout(new FlowLayout());
-    gameDescription = new JTextArea();
     mainPanel.setSize(400, 400);
     mainPanel.setBackground(Color.WHITE);
     mainPanel.setVisible(true);
     mainPanel.setFocusable(true);
     gamePanel.add(mainPanel,BorderLayout.CENTER);
-    //gamePanel.add(gameDescription,BorderLayout.NORTH);
-    //gameDescription.setText(displayString.getText() + move_counter);
-    JPanel controlPanel = new JPanel();
-    gamePanel.add(controlPanel);
-    controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
     JPanel hunterNamePanel = new JPanel();
     hunterNamePanel.setLayout(new FlowLayout());
     hunterNamePanel.add(new JLabel("HunterName"));
     hunterNamePanel.add(hunterTF);
-
     JPanel preyNamePanel = new JPanel();
     preyNamePanel.setLayout(new FlowLayout());
     preyNamePanel.add(new JLabel("PreyName"));
     preyNamePanel.add(preyTF);
-
-    controlPanel.add(hunterNamePanel);
-    controlPanel.add(preyNamePanel);
-
     JPanel NListPanel = new JPanel();
     NListPanel.setLayout(new FlowLayout());
     NListPanel.add(new JLabel("Choose N"));
@@ -314,8 +301,16 @@ public class EvasionView extends JApplet implements EvasionListener{
     WListPanel.setLayout(new FlowLayout());
     WListPanel.add(new JLabel("Choose W"));
     WListPanel.add(WList);
+    gameDescription.setText("Hunter:" + hunterName + " vs Prey:" + preyName + ". Moves:"+move_counter);
+    gameDescription.setEditable(false);
+    gamePanel.add(mainPanel);
+    JPanel controlPanel = new JPanel();
+    controlPanel.add(hunterNamePanel);
+    controlPanel.add(preyNamePanel);
     controlPanel.add(NListPanel);
     controlPanel.add(WListPanel);
+    gamePanel.add(controlPanel);
+    controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
     controlPanel.add(hunterLabel);
     controlPanel.add(hunterComputer);
     controlPanel.add(hunterHuman);
@@ -328,32 +323,19 @@ public class EvasionView extends JApplet implements EvasionListener{
     try {
       UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
     } catch (ClassNotFoundException e1) {
-      // TODO Auto-generated catch block
-      e1.printStackTrace();
     } catch (InstantiationException e1) {
-      // TODO Auto-generated catch block
-      e1.printStackTrace();
     } catch (IllegalAccessException e1) {
-      // TODO Auto-generated catch block
-      e1.printStackTrace();
     } catch (UnsupportedLookAndFeelException e1) {
-      // TODO Auto-generated catch block
-      e1.printStackTrace();
     }
-    int repaintInterval = 100;
+    int repaintInterval = 50;
     imageUpdater = new Timer(repaintInterval,
         new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         repaint();
-        //                addKeyListener(new KeyHandler());
       }
     }
         );
     imageUpdater.start();
-    //    mainPanel.addKeyListener(new KeyHandler());
-    //    gamePanel.addKeyListener(new KeyHandler());
-    //    controlPanel.addKeyListener(new KeyHandler());
-    //    container.addKeyListener(new KeyHandler());
     addKeyListener(new KeyHandler());
     setVisible(true);
     setFocusable(true);
@@ -374,11 +356,6 @@ public class EvasionView extends JApplet implements EvasionListener{
         return 0;
       }
     }.execute();
-    //    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-
-    //        return 0;
-    //      }
-    //    }.execute();
   } 
   Hunter Hunter;
   Prey Prey;
@@ -395,41 +372,56 @@ public class EvasionView extends JApplet implements EvasionListener{
     play();
   }
   long time = System.currentTimeMillis();
+  boolean hunterMan;
+  boolean preyMan;
+  HunterMove hunt_move = new HunterMove();
+  PreyMoves prey_move = PreyMoves.ZZ;
+
+  void hunt() {
+    new SwingWorker<Integer, Integer>() {
+      @Override
+      protected Integer doInBackground() throws Exception {
+        if (hunterMan) {
+          hunterMan = false;
+          moveHunter(hunt_move);
+        }
+        else {
+          moveHunter();
+        }
+        return 0;
+      }
+    }.execute();
+  }
+
+  void run() {
+    new SwingWorker<Integer, Integer>() {
+      @Override
+      protected Integer doInBackground() throws Exception {
+        if (preyMan) {
+          preyMan = false;
+          movePrey(prey_move);
+        }
+        else {
+          movePrey();
+        }
+        return 0;
+      }
+    }.execute();
+  }
 
   private void play() throws IOException {
     setVisible(false);
     setVisible(true);
     requestFocusInWindow();
-    //    synchronized (locker) {
 
-    while(!gameWon&&!keyPressed) {
+    while(!gameWon) {
       time = System.currentTimeMillis();
       while(System.currentTimeMillis() - time < wait);
-      new SwingWorker<Integer, Integer>() {
-        @Override
-        protected Integer doInBackground() throws Exception {
-          moveHunter();
-          return 0;
-        }
-      }.execute();
+      hunt();
       time = System.currentTimeMillis();
       while(System.currentTimeMillis() - time < wait + 30);
-      new SwingWorker<Integer, Integer>() {
-        @Override
-        protected Integer doInBackground() throws Exception {
-          moveHunter();
-          return 0;
-        }
-      }.execute();
-      new SwingWorker<Integer, Integer>() {
-        @Override
-        protected Integer doInBackground() throws Exception {
-          Thread.sleep(1);
-          movePrey();
-          return 0;
-        }
-      }.execute();
-      //    }
+      hunt();
+      run();
     }
   }
   private boolean huntKey = false;
@@ -458,8 +450,6 @@ public class EvasionView extends JApplet implements EvasionListener{
       huntKey = false;
       return;
     }
-    //    HunterMove move = new HunterMove();
-    //    move.move = hunterDirection;
     long val = System.currentTimeMillis() - time;
     Hunter.make_move(move, val > wait? 0 : val);
   }
@@ -473,25 +463,6 @@ public class EvasionView extends JApplet implements EvasionListener{
     Prey.make_move(move, val > wait? 0 : val);
   }
 
-  /*
-  public EvasionView(EvasionModel model, int N, int W) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
-    this.model = model;
-    this.N = N;
-    this.W = W;
-    frame = new JFrame("Evasion");
-    Container frameContainer = frame.getContentPane();
-    frame.setSize(510, 540);
-    frame.setMaximumSize(new Dimension(520, 520));
-    frame.setLocation(200, 200);
-    //    frame.setExtendedState(JFrame.);
-    frame.setVisible(true);
-    frame.setResizable(false);
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.setVisible(true);
-    this._init_container(frameContainer);
-  }
-
-   */
   @Override
   public void hunter_moved(HunterMove move, final String message) {
     move_counter++;
@@ -508,47 +479,25 @@ public class EvasionView extends JApplet implements EvasionListener{
       }
     }
     hunterDirection = move.move;
-    gameDescription.setText("MOVES" + move_counter + message);
-    //    new SwingWorker<Integer, Integer>() {
-    //      @Override
-    //      protected Integer doInBackground() throws Exception {
-    //        repaint();
-    //        return 0;
-    //      }
-    //    }.execute();
+    gameDescription.setText("Hunter:" + hunterName + "vs Prey:" + preyName + ". Moves:"+move_counter);
   }
 
   @Override
   public void prey_moved(Point2D move) {
     preyPosition = move;
-    //    new SwingWorker<Integer, Integer>() {
-    //      @Override
-    //      protected Integer doInBackground() throws Exception {
-    //        repaint();
-    //        return 0;
-    //      }
-    //    }.execute();
   }
 
   @Override
   public void prey_caught(long no_of_moves) {
     gameWon = true;
-    gameDescription.setText(displayString.getText() + ++move_counter + "Hunter Won!!!");
+    gameDescription.setText("Hunter:" + hunterName + "vs Prey:" + preyName + ". Moves:"+move_counter + "Game Over");
     winnerScore = move_counter+"";
     winner = "Hunter";
   }
 
   @Override
   public void game_started(final String hunterName,final String preyName) {
-    displayString.setText("Hunter " + hunterName + " vs Prey " + preyName +". Moves:");
-    gameDescription.setText("MOVES:" + move_counter);
-    //    new SwingWorker<Integer, Integer>() {
-    //      @Override
-    //      protected Integer doInBackground() throws Exception {
-    //        repaint();
-    //        return 0;
-    //      }
-    //    }.execute();
+    gameDescription.setText("Hunter:" + hunterName + "vs Prey:" + preyName + ". Moves:"+move_counter);
   }
 
   @Override
@@ -562,23 +511,16 @@ public class EvasionView extends JApplet implements EvasionListener{
     move_counter = no_of_moves;
     switch (player) {
     case 'h':
-      gameDescription.setText(displayString.getText() + move_counter +"Hunter Timed Out!!!");
+      gameDescription.setText("Hunter:" + hunterName + "vs Prey:" + preyName + ". Moves:"+move_counter);
       break;
 
     case 'p':
-      gameDescription.setText(displayString.getText() + move_counter+"Prey Timed Out!!!");
+      gameDescription.setText("Hunter:" + hunterName + "vs Prey:" + preyName + ". Moves:"+move_counter);
       break;
 
     default:
       break;
     }
-    //    new SwingWorker<Integer, Integer>() {
-    //      @Override
-    //      protected Integer doInBackground() throws Exception {
-    //        repaint();
-    //        return 0;
-    //      }
-    //    }.execute();
   }
 
   @Override
@@ -650,6 +592,8 @@ public class EvasionView extends JApplet implements EvasionListener{
           hMove.end = new Point2D.Float(--bottom, (float)hunterPosition.getY());
         }
         hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "w");
+        hunt_move = hMove;
+        hunterMan = true;
         break;
 
       case 'v':
@@ -679,18 +623,24 @@ public class EvasionView extends JApplet implements EvasionListener{
           hMove.end = new Point2D.Float((float)hunterPosition.getX(),--bottom);
         }
         hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "w");
+        hunt_move = hMove;
+        hunterMan = true;
         break;
 
       case 'z':
       case 'Z':
         hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "wx");
         hMove.wallNumber = 1;
+        hunt_move = hMove;
+        hunterMan = true;
         break;
 
       case 'x':
       case 'X':
         hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "wx");
         hMove.wallNumber = walls.size();
+        hunt_move = hMove;
+        hunterMan = true;
         break;
 
       case KeyEvent.VK_UP:  
@@ -698,91 +648,69 @@ public class EvasionView extends JApplet implements EvasionListener{
       case 'o':
       case 'O':
         pMove = PreyMoves.NN;
+        prey_move = pMove;
+        preyMan = true;
         break;
       case KeyEvent.VK_DOWN:  
       case KeyEvent.VK_KP_DOWN:
       case '.':
       case '>':
         pMove = PreyMoves.SS;
+        prey_move = pMove;
+        preyMan = true;
         break;
       case KeyEvent.VK_LEFT:  
       case KeyEvent.VK_KP_LEFT:
       case 'k':
       case 'K':
         pMove = PreyMoves.WW;
+        prey_move = pMove;
+        preyMan = true;
         break;
       case KeyEvent.VK_RIGHT:  
       case KeyEvent.VK_KP_RIGHT:
       case ';':
       case ':':
         pMove = PreyMoves.EE;
+        prey_move = pMove;
+        preyMan = true;
         break;
       case KeyEvent.VK_NUMPAD1:
       case ',':
       case '<':
         pMove = PreyMoves.SW;
+        prey_move = pMove;
+        preyMan = true;
         break;
       case KeyEvent.VK_NUMPAD3:
       case '/':
       case '?':
         pMove = PreyMoves.SE;
+        prey_move = pMove;
+        preyMan = true;
         break;
       case KeyEvent.VK_NUMPAD7:
       case 'i':
       case 'I':
         pMove = PreyMoves.NW;
+        prey_move = pMove;
+        preyMan = true;
         break;
       case 'p':
       case 'P':
         pMove = PreyMoves.NE;
+        prey_move = pMove;
+        preyMan = true;
         break;
       }
-      if (hMove.move != hunterDirection) {
-        final HunterMove move = hMove;
-        //        move.move = hunterDirection;
-        huntKey = true;
-        //      final long val = System.currentTimeMillis() - time;
-
-        new SwingWorker<Integer, Integer>() {
-          @Override
-          protected Integer doInBackground() throws Exception {
-            moveHunter(move);
-            return 0;
-          }
-        }.execute();
-      }
-      else if(pMove != PreyMoves.ZZ ){
-        final PreyMoves move = pMove;
-        preyKey = true;
-        //      final long val = System.currentTimeMillis() - time;
-        new SwingWorker<Integer, Integer>() {
-          @Override
-          protected Integer doInBackground() throws Exception {
-            movePrey(move);
-            return 0;
-          }
-        }.execute();
-      }
-      //      }
-      new SwingWorker<Integer, Integer>() {
-        @Override
-        protected Integer doInBackground() throws Exception {
-          keyPressed = false;
-          play();
-          return 0;
-        }
-      }.execute();
     }
+    
     @Override
     public void keyTyped(KeyEvent e) {
-      // TODO Auto-generated method stub
-      //    int j = 50;
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-      // TODO Auto-generated method stub
-      //    int j =30;
 
     }
   }
