@@ -39,7 +39,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
   private final int multiplier = 2;
   private final long wait = 50;
   private static final long serialVersionUID = 7599154223148422979L;
-  private boolean gameWon = false;
+  private boolean gameWon = true;
   Object lock = new Object();
   class GPanel extends JPanel {
     /**
@@ -52,6 +52,8 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
       this.height = height;
       this.width = width;
       setPreferredSize(new Dimension(this.height, this.width));
+      setSize(this.width, this.height);
+      setBackground(Color.WHITE);
     }
 
     public GPanel() {
@@ -68,7 +70,8 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
       g2d.setStroke(new BasicStroke(1f));
       synchronized (lock) {
         for (Line2D wall : walls) {
-          g2d.draw(wall);
+          Line2D line = new Line2D.Double(wall.getX1()*multiplier,wall.getY1()*multiplier,wall.getX2()*multiplier,wall.getY2()*multiplier);
+          g2d.draw(line);
         }
       }
       g2d.setColor(Color.BLACK);
@@ -79,12 +82,14 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
       if (preyPosition != null) {
         g2d.setColor(Color.BLUE);
         g2d.setStroke(new BasicStroke(3f,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g2d.draw(new Line2D.Float(preyPosition,preyPosition));
+        Point2D drawPrey = new Point2D.Double(preyPosition.getX()*multiplier,preyPosition.getY()*multiplier);
+        g2d.draw(new Line2D.Float(drawPrey,drawPrey));
       }
       if (hunterPosition != null) {
         g2d.setColor(Color.RED);
         g2d.setStroke(new BasicStroke(5f));
-        g2d.draw(new Line2D.Float(hunterPosition,hunterPosition));
+        Point2D drawHunter = new Point2D.Double(hunterPosition.getX()*multiplier,hunterPosition.getY()*multiplier);
+        g2d.draw(new Line2D.Float(drawHunter,drawHunter));
       }
     }
   }
@@ -249,6 +254,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
         W = 3;
         hunterComputer.setSelected(true);
         preyComputer.setSelected(true);
+        gameWon = true;
         repaint();
       }
     }
@@ -311,7 +317,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
   }
 
   public void _init_container(Container frameContainer) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, IOException {
-    preyPosition = new Point(130*multiplier,100*multiplier);
+    preyPosition = new Point(130,100);
     hunterPosition = new Point(0, 0);
     moves_to_next_wall = N;
     time_counter = 0;
@@ -342,6 +348,7 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
   Hunter Hunter;
   Prey Prey;
   protected void begin() throws IOException {
+    gameWon = false;
     model = new EvasionModel(N, W, 0);
     Hunter = new Hunter(model, N, W);
     Prey = new Prey(model, N, W);
@@ -688,13 +695,13 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
   @Override
   public void keyTyped(KeyEvent e) {
     // TODO Auto-generated method stub
-    
+    int j = 50;
   }
 
   @Override
   public void keyReleased(KeyEvent e) {
     // TODO Auto-generated method stub
-    
+    int j =30;
   }
   
   
