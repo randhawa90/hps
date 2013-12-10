@@ -31,7 +31,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 
-public class EvasionView extends JApplet implements EvasionListener, KeyListener{
+public class EvasionView extends JApplet implements EvasionListener{
   /**
    * 
    */
@@ -314,6 +314,9 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
       // TODO Auto-generated catch block
       e1.printStackTrace();
     }
+    addKeyListener(new KeyHandler());
+    setVisible(true);
+    setFocusable(true);
   }
 
   public void _init_container(Container frameContainer) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, IOException {
@@ -362,6 +365,8 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
   long time = System.currentTimeMillis();
   
   private void play() throws IOException {
+    setVisible(false);
+    setVisible(true);
     while(!gameWon) {
       time = System.currentTimeMillis();
       while(System.currentTimeMillis() - time < wait);
@@ -564,10 +569,14 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
           (float)(px+z*rx), (float)(py+z*ry));
     }
   }
-  
+
+  private class KeyHandler implements KeyListener {
   
   @Override
   public void keyPressed(KeyEvent e) {
+    if (gameWon) {
+      return;
+    }
     char c = e.getKeyChar();
     PreyMoves pMove = PreyMoves.ZZ;
     HunterMove hMove = new HunterMove();
@@ -691,18 +700,21 @@ public class EvasionView extends JApplet implements EvasionListener, KeyListener
       }.execute();
     }
   }
-
   @Override
   public void keyTyped(KeyEvent e) {
     // TODO Auto-generated method stub
-    int j = 50;
+//    int j = 50;
   }
 
   @Override
   public void keyReleased(KeyEvent e) {
     // TODO Auto-generated method stub
-    int j =30;
+//    int j =30;
+    
   }
-  
+}
+  public void start() {
+    this.requestFocusInWindow();
+}
   
 }
