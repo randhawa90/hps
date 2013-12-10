@@ -6,22 +6,28 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
 import java.applet.*;
 import java.awt.*;
+
 import javax.swing.*;
 
 
-public class EvasionView extends JApplet implements EvasionListener {
+public class EvasionView extends JApplet{
   Object lock = new Object();
   class GPanel extends JPanel {
     /**
@@ -33,7 +39,7 @@ public class EvasionView extends JApplet implements EvasionListener {
     public GPanel(int height, int width) {
       this.height = height;
       this.width = width;
-      setPreferredSize(new Dimension(this.height, this.widht));
+      setPreferredSize(new Dimension(this.height, this.width));
     }
 
     public GPanel() {
@@ -58,7 +64,7 @@ public class EvasionView extends JApplet implements EvasionListener {
       g2d.draw(new Line2D.Float(0,0, this.height, 0));
       g2d.draw(new Line2D.Float(0,0,0, this.width));
       g2d.draw(new Line2D.Float(this.width, 0, this.height, this.width));
-      if (prePosition != null) {
+      if (preyPosition != null) {
         g2d.setColor(Color.BLUE);
         g2d.setStroke(new BasicStroke(3f,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g2d.draw(new Line2D.Float(preyPosition,preyPosition));
@@ -88,14 +94,14 @@ public class EvasionView extends JApplet implements EvasionListener {
   /* attributes needed by the game */
   final static int HUMAN = 0;
   final static int COMPUTER = 1;
-  final int N = 3;
-  final int W = 3;
+  int N = 3;
+  int W = 3;
   int hunter = COMPUTER;
   int prey = COMPUTER;
 
   String hunterName;
   String preyName;
-  
+
   /* GUI components */
   JLabel displayString = new JLabel("DisplayLabel");
   JLabel hunterLabel = new JLabel("HunterLabel");
@@ -103,42 +109,106 @@ public class EvasionView extends JApplet implements EvasionListener {
 
   String[] nstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox NList = new JComboBox(nstrings);
-  NList.setSelectedIndex(0);
-  NList.addActionListener(new ActionListener {
-    public void actionPerformed(ActionEvent e) {
-          JComboBox cb = (JComboBox)e.getSource();
-          String str = (String)cb.getSelectedItem();
-          N = Integer.parseInt(str);
-      }
-  }
-  );
+  //
+
+  //
 
   String[] wstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox WList = new JComboBox(wstrings);
-  WList.setSelectedIndex(1);
-  WList.addActionListener(new ActionListener {
-    public void actionPerformed(ActionEvent e) {
-          JComboBox cb = (JComboBox)e.getSource();
-          String str = (String)cb.getSelectedItem();
-          W = Integer.parseInt(str);
+  //
+
+  //
+//  class RadioActionListener implements ActionListener {
+//    int id = 0;
+//    public RadioActionListener(int id) {
+//      this.id = id;
+//    }
+//    public void actionPerformed(ActionEvent e) {
+//      if(this.id == 0) {// hunter
+//        if ("Computer".equals(e.getActionCommand())) {
+//          super.hunter = COMPUTER;
+//        }else {
+//          super.hunter = HUMAN;
+//        }
+//      }
+//      else {
+//        if ("Computer".equals(e.getActionCommand())) {
+//          super.prey = COMPUTER;
+//        }else {
+//          super.prey = HUMAN;
+//        }
+//      }
+//    }
+//  }
+  
+  
+  ButtonGroup hunterBG = new ButtonGroup();
+  JRadioButton hunterComputer = new JRadioButton("Computer");
+  JRadioButton hunterHuman = new JRadioButton("Human");
+  //
+
+  //
+  ButtonGroup preyBG = new ButtonGroup();
+  JRadioButton preyComputer = new JRadioButton("Computer");
+  JRadioButton preyHuman = new JRadioButton("Human");
+  //
+
+  //
+  JButton startButton = new JButton("Start");
+  JButton resetButton = new JButton("Reset");
+  //
+
+  //
+  public void init() {
+    NList.setSelectedIndex(0);
+    NList.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        JComboBox cb = (JComboBox)e.getSource();
+        String str = (String)cb.getSelectedItem();
+        N = Integer.parseInt(str);
       }
-  }
-  );
- 
-  class RadioActionListener implements ActionListener {
-    int id = 0;
-    publid RadioActionListener(int id) {
-      this.id = id;
     }
-    public void actionPerformed(ActoinEvent e) {
-      if(this.id == 0) {// hunter
+        );
+
+    WList.setSelectedIndex(1);
+    WList.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        JComboBox cb = (JComboBox)e.getSource();
+        String str = (String)cb.getSelectedItem();
+        W = Integer.parseInt(str);
+      }
+    }
+        );
+
+    hunterBG.add(hunterComputer);
+    hunterBG.add(hunterHuman);
+    hunterComputer.setSelected(true);
+    hunterComputer.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         if ("Computer".equals(e.getActionCommand())) {
           hunter = COMPUTER;
         }else {
           hunter = HUMAN;
         }
       }
-      else {
+    }
+        );
+    hunterHuman.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        if ("Computer".equals(e.getActionCommand())) {
+          hunter = COMPUTER;
+        }else {
+          hunter = HUMAN;
+        }
+      }
+    }
+        );
+
+    preyBG.add(preyComputer);
+    preyBG.add(preyHuman);
+    preyComputer.setSelected(true);
+    preyComputer.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         if ("Computer".equals(e.getActionCommand())) {
           prey = COMPUTER;
         }else {
@@ -146,48 +216,38 @@ public class EvasionView extends JApplet implements EvasionListener {
         }
       }
     }
-  }
-  ButtonGroup hunterBG = new ButtonGroup();
-  JRadioButton hunterComputer = new JRatioButton("Computer");
-  JRadioButton hunterHuman = new JRatioButton("Human");
-  hunterBG.add(hunterComputer);
-  hunterBG.add(hunterHuman);
-  hunterComputer.setSelected(true);
-  hunterComputer.addActionListener(new RadioActionListener(0));
-  hunterHuman.addActionListener(new RadioActionListener(0));
-  
-  ButtonGroup preyBG = new ButtonGroup();
-  JRadioButton preyComputer = new JRatioButton("Computer");
-  JRadioButton preyHuman = new JRatioButton("Human");
-  preyBG.add(preyComputer);
-  preyBG.add(preyHuman);
-  preyComputer.setSelected(true);
-  preyComputer.addActionListener(new RadioActionListener(1));
-  preyHuman.addActionListener(new RadioActionListener(1));
-
-  JButton startButton = new JButton("Start");
-  JButton resetButton = new JButton("Reset");
-
-  resetButton.addActionListener( new ActionLister() {
+        );
+    preyHuman.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-          walls = ArrayList<Line2D>();
-          hunter = COMPUTER;
+        if ("Computer".equals(e.getActionCommand())) {
           prey = COMPUTER;
-          N = 3;
-          W = 3;
+        }else {
+          prey = HUMAN;
+        }
       }
     }
-  });
+        );
 
-  public void init() {
+    resetButton.addActionListener( new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        walls = new ArrayList<Line2D>();
+        hunter = COMPUTER;
+        prey = COMPUTER;
+        N = 3;
+        W = 3;
+      }
+    }
+        );
+
+    //
     Container container = getContentPane();
     container.setBackground(Color.WHITE);
     container.setLayout(new BorderLayout());
     container.add(displayString, BorderLayout.PAGE_START);
-    
+
     JPanel gamePanel = new JPanel();
     container.add(gamePanel, BorderLayout.CENTER);
-    
+
     gamePanel.setLayout(new FlowLayout());
     gamePanel.add(mainPanel);
     JPanel controlPanel = new JPanel();
@@ -196,14 +256,16 @@ public class EvasionView extends JApplet implements EvasionListener {
     controlPanel.add(NList);
     controlPanel.add(WList);
     controlPanel.add(hunterLabel);
-    controlPanel.add(hunterBG);
+    controlPanel.add(hunterComputer);
+    controlPanel.add(hunterHuman);
     controlPanel.add(preyLabel);
-    controlPanel.add(preyBG);
+    controlPanel.add(preyComputer);
+    controlPanel.add(preyHuman);
     controlPanel.add(startButton);
     controlPanel.add(resetButton);
   }
 
-  public void _init_container(Container frameContainer) {
+  public void _init_container(Container frameContainer) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
     preyPosition = new Point(330,200);
     hunterPosition = new Point(0, 0);
     moves_to_next_wall = N;
@@ -240,7 +302,7 @@ public class EvasionView extends JApplet implements EvasionListener {
     this._init_container(frameContainer);
   }
 
-  */
+   */
   @Override
   public void hunter_moved(HunterMove move, final String message) {
     move_counter++;
@@ -286,13 +348,13 @@ public class EvasionView extends JApplet implements EvasionListener {
 
   @Override
   public void game_started(final String hunterName,final String preyName) {
-    displayString = "Hunter " + hunterName + " vs Prey " + preyName +". Moves:";
+    displayString.setText("Hunter " + hunterName + " vs Prey " + preyName +". Moves:");
     new SwingWorker<Integer, Integer>() {
       @Override
       protected Integer doInBackground() throws Exception {
         mainPanel.repaint();
         frame.repaint();
-        gameDescription.setText(displayString + move_counter);
+        gameDescription.setText(displayString.getText() + move_counter);
         return 0;
       }
     }.execute();
@@ -300,7 +362,7 @@ public class EvasionView extends JApplet implements EvasionListener {
 
   @Override
   public void game_reset() {
-    
+
 
   }
 
@@ -311,16 +373,16 @@ public class EvasionView extends JApplet implements EvasionListener {
       @Override
       protected Integer doInBackground() throws Exception {
         switch (player) {
-          case 'h':
-            gameDescription.setText(displayString + move_counter +"Hunter Timed Out!!!");
-            break;
+        case 'h':
+          gameDescription.setText(displayString.getText() + move_counter +"Hunter Timed Out!!!");
+          break;
 
-          case 'p':
-            gameDescription.setText(displayString + move_counter+"Prey Timed Out!!!");
-            break;
+        case 'p':
+          gameDescription.setText(displayString.getText() + move_counter+"Prey Timed Out!!!");
+          break;
 
-          default:
-            break;
+        default:
+          break;
         }
         frame.repaint();
         return 0;
