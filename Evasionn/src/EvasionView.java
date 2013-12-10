@@ -30,20 +30,29 @@ import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.JTextField;
 
 
 public class EvasionView extends JApplet implements EvasionListener{
   /**
    * 
    */
-//  EvasionModel model;
+  //  EvasionModel model;
+  public String winner = "not set";
+  public String winnerScore = "not set";
+  public String getWinner() {
+    return winner;
+  }
+
+  public String getWinnerScore() {
+    return winnerScore;
+  }
   Timer imageUpdater;
   private final int multiplier = 2;
-  private final long wait = 50;
+  private final long wait = 300;
   private static final long serialVersionUID = 7599154223148422979L;
-  private boolean gameWon = false;
+  private boolean gameWon = true;
   Object lock = new Object();
+  Object locker = new Object();
   class GPanel extends JPanel {
     /**
      * 
@@ -68,7 +77,7 @@ public class EvasionView extends JApplet implements EvasionListener{
       super.paintComponent(g);
       g2d = (Graphics2D)g;
       g2d.setBackground(Color.WHITE);
-//      g2d.clearRect(0, 0, this.height, this.width);
+      //      g2d.clearRect(0, 0, this.height, this.width);
       g2d.setColor(Color.GREEN);
       g2d.setStroke(new BasicStroke(1f));
       synchronized (lock) {
@@ -94,9 +103,6 @@ public class EvasionView extends JApplet implements EvasionListener{
         Point2D drawHunter = new Point2D.Double(hunterPosition.getX()*multiplier,hunterPosition.getY()*multiplier);
         g2d.draw(new Line2D.Float(drawHunter,drawHunter));
       }
-      
-      setFocusable(true);
-      requestFocusInWindow();
     }
   }
   EvasionModel model = null;
@@ -140,7 +146,31 @@ public class EvasionView extends JApplet implements EvasionListener{
   JComboBox<String> WList = new JComboBox<String>(wstrings);
   //
 
-  
+  //
+  //  class RadioActionListener implements ActionListener {
+  //    int id = 0;
+  //    public RadioActionListener(int id) {
+  //      this.id = id;
+  //    }
+  //    public void actionPerformed(ActionEvent e) {
+  //      if(this.id == 0) {// hunter
+  //        if ("Computer".equals(e.getActionCommand())) {
+  //          super.hunter = COMPUTER;
+  //        }else {
+  //          super.hunter = HUMAN;
+  //        }
+  //      }
+  //      else {
+  //        if ("Computer".equals(e.getActionCommand())) {
+  //          super.prey = COMPUTER;
+  //        }else {
+  //          super.prey = HUMAN;
+  //        }
+  //      }
+  //    }
+  //  }
+
+
   ButtonGroup hunterBG = new ButtonGroup();
   JRadioButton hunterComputer = new JRadioButton("Computer");
   JRadioButton hunterHuman = new JRadioButton("Human");
@@ -159,6 +189,7 @@ public class EvasionView extends JApplet implements EvasionListener{
 
   //
   public void init() {
+    resize(550 , 480);
     NList.setSelectedIndex(0);
     NList.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
@@ -237,35 +268,49 @@ public class EvasionView extends JApplet implements EvasionListener{
         hunterComputer.setSelected(true);
         preyComputer.setSelected(true);
         gameWon = true;
-//        repaint();
+        //        repaint();
       }
     }
         );
     startButton.addActionListener( new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-//        try {
-          new SwingWorker<Integer, Integer>() {
-            @Override
-            protected Integer doInBackground() throws Exception {
-              _init_container(getContentPane());
-              return 0;
-            }
-          }.execute();
-        
+        //        try {
+        new SwingWorker<Integer, Integer>() {
+          @Override
+          protected Integer doInBackground() throws Exception {
+            _init_container(getContentPane());
+            return 0;
+          }
+        }.execute();
+
       }
     }
         );
-    
+
     //
     Container container = getContentPane();
     container.setBackground(Color.WHITE);
     container.setLayout(new BorderLayout());
     container.add(displayString, BorderLayout.PAGE_START);
-    
+
     JPanel gamePanel = new JPanel();
     container.add(gamePanel, BorderLayout.CENTER);
 
     gamePanel.setLayout(new FlowLayout());
+    gameDescription = new JTextArea();
+    //  mainPanel = new GPanel();
+    mainPanel.setSize(400, 400);
+    mainPanel.setBackground(Color.WHITE);
+    //    mainPanel.setBovvv   rder(BorderFactory.createLineBorder(Color.black, 1));
+    mainPanel.setVisible(true);
+    mainPanel.setFocusable(true);
+    gamePanel.add(mainPanel,BorderLayout.CENTER);
+    gamePanel.add(gameDescription,BorderLayout.NORTH);
+    //  new SwingWorker<Integer, Integer>() {
+    //    @Override
+    //    protected Integer doInBackground() throws Exception {
+    //      frameContainer.repaint();
+    gameDescription.setText(displayString.getText() + move_counter);
     gamePanel.add(mainPanel);
     JPanel controlPanel = new JPanel();
     gamePanel.add(controlPanel);
@@ -280,9 +325,6 @@ public class EvasionView extends JApplet implements EvasionListener{
     controlPanel.add(preyHuman);
     controlPanel.add(startButton);
     controlPanel.add(resetButton);
-    //JTextField ta = new JTextField(10);
-    //ta.addKeyListener(new KeyHandler());
-    //controlPanel.add(ta);
 
     try {
       UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -302,12 +344,18 @@ public class EvasionView extends JApplet implements EvasionListener{
     int repaintInterval = 100;
     imageUpdater = new Timer(repaintInterval,
         new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                repaint();
-            }
-        }
-    );
+      public void actionPerformed(ActionEvent e) {
+        repaint();
+        //                addKeyListener(new KeyHandler());
+      }
+    }
+        );
     imageUpdater.start();
+    //    mainPanel.addKeyListener(new KeyHandler());
+    //    gamePanel.addKeyListener(new KeyHandler());
+    //    controlPanel.addKeyListener(new KeyHandler());
+    //    container.addKeyListener(new KeyHandler());
+    addKeyListener(new KeyHandler());
     setVisible(true);
     setFocusable(true);
   }
@@ -319,28 +367,19 @@ public class EvasionView extends JApplet implements EvasionListener{
     time_counter = 0;
     move_counter = 0;
     hunterDirection = HunterMoves.SE;
-    //walls = new ArrayList<Line2D>();
-
-    //UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-    gameDescription = new JTextArea();
-    //gamePanel.setSize(400, 400);
-    //gamePanel.setBackground(Color.WHITE);
-    //    mainPanel.setBovvv   rder(BorderFactory.createLineBorder(Color.black, 1));
-    //gamePanel.setVisible(true);
-    mainPanel.setFocusable(true);
-    mainPanel.requestFocusInWindow();
-    mainPanel.addKeyListener(new KeyHandler());
-    //frameContainer.add(mainPanel,BorderLayout.CENTER);
-    //frameContainer.add(gameDescription,BorderLayout.NORTH);
-//    new SwingWorker<Integer, Integer>() {
-//      @Override
-//      protected Integer doInBackground() throws Exception {
-//        frameContainer.repaint();
-        gameDescription.setText(displayString.getText() + move_counter);
+    walls = new ArrayList<Line2D>();
+    new SwingWorker<Integer, Integer>() {
+      @Override
+      protected Integer doInBackground() throws Exception {
         begin();
-//        return 0;
-//      }
-//    }.execute();
+        return 0;
+      }
+    }.execute();
+    //    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+
+    //        return 0;
+    //      }
+    //    }.execute();
   } 
   Hunter Hunter;
   Prey Prey;
@@ -357,11 +396,14 @@ public class EvasionView extends JApplet implements EvasionListener{
     play();
   }
   long time = System.currentTimeMillis();
-  
+
   private void play() throws IOException {
     setVisible(false);
     setVisible(true);
-    while(!gameWon) {
+    requestFocusInWindow();
+    //    synchronized (locker) {
+
+    while(!gameWon&&!keyPressed) {
       time = System.currentTimeMillis();
       while(System.currentTimeMillis() - time < wait);
       new SwingWorker<Integer, Integer>() {
@@ -388,6 +430,7 @@ public class EvasionView extends JApplet implements EvasionListener{
           return 0;
         }
       }.execute();
+      //    }
     }
   }
   private boolean huntKey = false;
@@ -402,7 +445,7 @@ public class EvasionView extends JApplet implements EvasionListener{
     long val = System.currentTimeMillis() - time;
     Hunter.make_move(move, val > wait? 0 : val);
   }
-  
+
   private synchronized void movePrey() throws IOException {
     if (preyKey) {
       preyKey = false;
@@ -416,12 +459,12 @@ public class EvasionView extends JApplet implements EvasionListener{
       huntKey = false;
       return;
     }
-//    HunterMove move = new HunterMove();
-    move.move = hunterDirection;
+    //    HunterMove move = new HunterMove();
+    //    move.move = hunterDirection;
     long val = System.currentTimeMillis() - time;
     Hunter.make_move(move, val > wait? 0 : val);
   }
-  
+
   private synchronized void movePrey(PreyMoves move) throws IOException {
     if (preyKey) {
       preyKey = false;
@@ -431,6 +474,25 @@ public class EvasionView extends JApplet implements EvasionListener{
     Prey.make_move(move, val > wait? 0 : val);
   }
 
+  /*
+  public EvasionView(EvasionModel model, int N, int W) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
+    this.model = model;
+    this.N = N;
+    this.W = W;
+    frame = new JFrame("Evasion");
+    Container frameContainer = frame.getContentPane();
+    frame.setSize(510, 540);
+    frame.setMaximumSize(new Dimension(520, 520));
+    frame.setLocation(200, 200);
+    //    frame.setExtendedState(JFrame.);
+    frame.setVisible(true);
+    frame.setResizable(false);
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.setVisible(true);
+    this._init_container(frameContainer);
+  }
+
+   */
   @Override
   public void hunter_moved(HunterMove move, final String message) {
     move_counter++;
@@ -447,31 +509,47 @@ public class EvasionView extends JApplet implements EvasionListener{
       }
     }
     hunterDirection = move.move;
-    gameDescription.setText(displayString.getText() + move_counter + message);
+    gameDescription.setText("MOVES" + move_counter + message);
+    //    new SwingWorker<Integer, Integer>() {
+    //      @Override
+    //      protected Integer doInBackground() throws Exception {
+    //        repaint();
+    //        return 0;
+    //      }
+    //    }.execute();
   }
 
   @Override
   public void prey_moved(Point2D move) {
     preyPosition = move;
+    //    new SwingWorker<Integer, Integer>() {
+    //      @Override
+    //      protected Integer doInBackground() throws Exception {
+    //        repaint();
+    //        return 0;
+    //      }
+    //    }.execute();
   }
 
   @Override
   public void prey_caught(long no_of_moves) {
     gameWon = true;
     gameDescription.setText(displayString.getText() + ++move_counter + "Hunter Won!!!");
+    winnerScore = move_counter+"";
+    winner = "Hunter";
   }
 
   @Override
   public void game_started(final String hunterName,final String preyName) {
     displayString.setText("Hunter " + hunterName + " vs Prey " + preyName +". Moves:");
-    gameDescription.setText(displayString.getText() + move_counter);
-//    new SwingWorker<Integer, Integer>() {
-//      @Override
-//      protected Integer doInBackground() throws Exception {
-//        repaint();
-//        return 0;
-//      }
-//    }.execute();
+    gameDescription.setText("MOVES:" + move_counter);
+    //    new SwingWorker<Integer, Integer>() {
+    //      @Override
+    //      protected Integer doInBackground() throws Exception {
+    //        repaint();
+    //        return 0;
+    //      }
+    //    }.execute();
   }
 
   @Override
@@ -495,20 +573,20 @@ public class EvasionView extends JApplet implements EvasionListener{
     default:
       break;
     }
-//    new SwingWorker<Integer, Integer>() {
-//      @Override
-//      protected Integer doInBackground() throws Exception {
-//        repaint();
-//        return 0;
-//      }
-//    }.execute();
+    //    new SwingWorker<Integer, Integer>() {
+    //      @Override
+    //      protected Integer doInBackground() throws Exception {
+    //        repaint();
+    //        return 0;
+    //      }
+    //    }.execute();
   }
 
   @Override
   public String getName() {
     return null;
   }
-  
+
   private Point2D.Float getIntersectionPoint(Line2D.Float line1, Line2D.Float line2) {
     if (! line1.intersectsLine(line2) ) return null;
     double px = line1.getX1(),
@@ -532,152 +610,185 @@ public class EvasionView extends JApplet implements EvasionListener{
   }
 
   private class KeyHandler implements KeyListener {
-  @Override
-  public void keyPressed(KeyEvent e) {
-    System.out.println(gameWon + "");
-    System.out.println("key press" + e.getKeyChar());
-    if (gameWon) {
-      return;
-    }
-    char c = e.getKeyChar();
-    System.out.println("Press Key " + c);
-    PreyMoves pMove = PreyMoves.ZZ;
-    HunterMove hMove = new HunterMove();
-    hMove.move = hunterDirection;
-    switch(c) {
-    case KeyEvent.VK_H:
-      Line2D hWall = new Line2D.Float(0, (float)hunterPosition.getY(), 199, (float)hunterPosition.getY());
-      {
-        float top = 0;
-        float bottom = 199;
 
-        for (Line2D wall : walls) {
-          if (hWall.intersectsLine(wall)) {
-            Point2D intersect = getIntersectionPoint((Line2D.Float)hWall, (Line2D.Float)wall);
-            float x = (float)intersect.getX();
-            if (x < hunterPosition.getX()) {
-              if (x > top) {
-                top = x;
+    @Override
+    public void keyPressed(KeyEvent e) {
+      if (gameWon) {
+        return;
+      }
+      //      synchronized (locker) {
+      keyPressed = true;
+      char c = e.getKeyChar();
+      int a = c;
+      PreyMoves pMove = PreyMoves.ZZ;
+      HunterMove hMove = new HunterMove();
+      hMove.move = hunterDirection;
+      switch(c) {
+      case 'h':
+      case 'H':
+        Line2D hWall = new Line2D.Float(0, (float)hunterPosition.getY(), 199, (float)hunterPosition.getY());
+        {
+          float top = -1;
+          float bottom = 200;
+
+          for (Line2D wall : walls) {
+            if (hWall.intersectsLine(wall)) {
+              Point2D intersect = getIntersectionPoint((Line2D.Float)hWall, (Line2D.Float)wall);
+              float x = (float)intersect.getX();
+              if (x < hunterPosition.getX()) {
+                if (x > top) {
+                  top = x;
+                }
               }
-            }
-            else if (x > hunterPosition.getX()) {
-              if (x < bottom) {
-                bottom = x;
+              else if (x > hunterPosition.getX()) {
+                if (x < bottom) {
+                  bottom = x;
+                }
               }
             }
           }
+          hMove.start = new Point2D.Float(++top, (float)hunterPosition.getY());
+          hMove.end = new Point2D.Float(--bottom, (float)hunterPosition.getY());
         }
-        hMove.start = new Point2D.Float(top, (float)hunterPosition.getY());
-        hMove.start = new Point2D.Float(bottom, (float)hunterPosition.getY());
-      }
-      hMove.move = HunterMoves.valueOf(hunterDirection.toString() + 'w');
-      break;
-      
-    case KeyEvent.VK_V:
-      Line2D vWall = new Line2D.Float((float)hunterPosition.getX(), 0, (float)hunterPosition.getX(), 199);
-      {
-        float top = 0;
-        float bottom = 199;
+        hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "w");
+        break;
 
-        for (Line2D wall : walls) {
-          if (vWall.intersectsLine(wall)) {
-            Point2D intersect = getIntersectionPoint((Line2D.Float)vWall, (Line2D.Float)wall);
-            float x = (float)intersect.getY();
-            if (x < hunterPosition.getY()) {
-              if (x > top) {
-                top = x;
+      case 'v':
+      case 'V':
+        Line2D vWall = new Line2D.Float((float)hunterPosition.getX(), 0, (float)hunterPosition.getX(), 199);
+        {
+          float top = -1;
+          float bottom = 200;
+
+          for (Line2D wall : walls) {
+            if (vWall.intersectsLine(wall)) {
+              Point2D intersect = getIntersectionPoint((Line2D.Float)vWall, (Line2D.Float)wall);
+              float x = (float)intersect.getY();
+              if (x < hunterPosition.getY()) {
+                if (x > top) {
+                  top = x;
+                }
               }
-            }
-            else if (x > hunterPosition.getY()) {
-              if (x < bottom) {
-                bottom = x;
+              else if (x > hunterPosition.getY()) {
+                if (x < bottom) {
+                  bottom = x;
+                }
               }
             }
           }
+          hMove.start = new Point2D.Float((float)hunterPosition.getX(),++top);
+          hMove.end = new Point2D.Float((float)hunterPosition.getX(),--bottom);
         }
-        hMove.start = new Point2D.Float((float)hunterPosition.getX(),top);
-        hMove.start = new Point2D.Float((float)hunterPosition.getX(),bottom);
+        hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "w");
+        break;
+
+      case 'z':
+      case 'Z':
+        hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "wx");
+        hMove.wallNumber = 1;
+        break;
+
+      case 'x':
+      case 'X':
+        hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "wx");
+        hMove.wallNumber = walls.size();
+        break;
+
+      case KeyEvent.VK_UP:  
+      case KeyEvent.VK_KP_UP:
+      case 'o':
+      case 'O':
+        pMove = PreyMoves.NN;
+        break;
+      case KeyEvent.VK_DOWN:  
+      case KeyEvent.VK_KP_DOWN:
+      case '.':
+      case '>':
+        pMove = PreyMoves.SS;
+        break;
+      case KeyEvent.VK_LEFT:  
+      case KeyEvent.VK_KP_LEFT:
+      case 'k':
+      case 'K':
+        pMove = PreyMoves.WW;
+        break;
+      case KeyEvent.VK_RIGHT:  
+      case KeyEvent.VK_KP_RIGHT:
+      case ';':
+      case ':':
+        pMove = PreyMoves.EE;
+        break;
+      case KeyEvent.VK_NUMPAD1:
+      case ',':
+      case '<':
+        pMove = PreyMoves.SW;
+        break;
+      case KeyEvent.VK_NUMPAD3:
+      case '/':
+      case '?':
+        pMove = PreyMoves.SE;
+        break;
+      case KeyEvent.VK_NUMPAD7:
+      case 'i':
+      case 'I':
+        pMove = PreyMoves.NW;
+        break;
+      case 'p':
+      case 'P':
+        pMove = PreyMoves.NE;
+        break;
       }
-      hMove.move = HunterMoves.valueOf(hunterDirection.toString() + 'w');
-      break;
-     
-    case KeyEvent.VK_Z:
-      hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "wx");
-      hMove.wallNumber = 0;
-      break;
-      
-    case KeyEvent.VK_X:
-      hMove.move = HunterMoves.valueOf(hunterDirection.toString() + "wx");
-      hMove.wallNumber = walls.size() - 1;
-      break;
-      
-    case KeyEvent.VK_UP:
-      pMove = PreyMoves.NN;
-      break;
-    case KeyEvent.VK_DOWN:
-      pMove = PreyMoves.SS;
-      break;
-    case KeyEvent.VK_LEFT:
-      pMove = PreyMoves.WW;
-      break;
-    case KeyEvent.VK_RIGHT:
-      pMove = PreyMoves.EE;
-      break;
-    case KeyEvent.VK_NUMPAD1:
-      pMove = PreyMoves.SW;
-      break;
-    case KeyEvent.VK_NUMPAD3:
-      pMove = PreyMoves.SE;
-      break;
-    case KeyEvent.VK_NUMPAD7:
-      pMove = PreyMoves.NW;
-      break;
-    case KeyEvent.VK_NUMPAD9:
-      pMove = PreyMoves.NE;
-      break;
-    }
-    if (pMove != PreyMoves.ZZ) {
-      final HunterMove move = hMove;
-      move.move = hunterDirection;
-      huntKey = true;
-//      final long val = System.currentTimeMillis() - time;
-      
+      if (hMove.move != hunterDirection) {
+        final HunterMove move = hMove;
+        //        move.move = hunterDirection;
+        huntKey = true;
+        //      final long val = System.currentTimeMillis() - time;
+
+        new SwingWorker<Integer, Integer>() {
+          @Override
+          protected Integer doInBackground() throws Exception {
+            moveHunter(move);
+            return 0;
+          }
+        }.execute();
+      }
+      else if(pMove != PreyMoves.ZZ ){
+        final PreyMoves move = pMove;
+        preyKey = true;
+        //      final long val = System.currentTimeMillis() - time;
+        new SwingWorker<Integer, Integer>() {
+          @Override
+          protected Integer doInBackground() throws Exception {
+            movePrey(move);
+            return 0;
+          }
+        }.execute();
+      }
+      //      }
       new SwingWorker<Integer, Integer>() {
         @Override
         protected Integer doInBackground() throws Exception {
-          moveHunter(move);
+          keyPressed = false;
+          play();
           return 0;
         }
       }.execute();
     }
-    else {
-      final PreyMoves move = pMove;
-      preyKey = true;
-//      final long val = System.currentTimeMillis() - time;
-      new SwingWorker<Integer, Integer>() {
-        @Override
-        protected Integer doInBackground() throws Exception {
-          movePrey(move);
-          return 0;
-        }
-      }.execute();
+    @Override
+    public void keyTyped(KeyEvent e) {
+      // TODO Auto-generated method stub
+      //    int j = 50;
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+      // TODO Auto-generated method stub
+      //    int j =30;
+
     }
   }
-  @Override
-  public void keyTyped(KeyEvent e) {
-    // TODO Auto-generated method stub
-//    int j = 50;
-  }
-
-  @Override
-  public void keyReleased(KeyEvent e) {
-    // TODO Auto-generated method stub
-//    int j =30;
-    
-  }
-}
   public void start() {
     this.requestFocusInWindow();
-}
-  
+  }
+  boolean keyPressed;
 }
