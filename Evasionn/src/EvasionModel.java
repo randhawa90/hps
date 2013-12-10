@@ -219,6 +219,7 @@ public class EvasionModel {
 			realMove.madeWall = true;
 			if (nextWallTimeLeft != 0) {
 				realMove.madeWall = false;
+				break;
 			}
 			if (walls.size() == W) {
 				realMove.madeWall = false;
@@ -237,10 +238,10 @@ public class EvasionModel {
 				realMove.madeWall = false;
 				message = "Wall not built as it passes through prey";
 			}
-			else if(wallReq.ptSegDist(prevPos) > epsilon) {
-				realMove.madeWall = false;
-				message = "Wall not built as it was not at hunter position";
-			}
+//			else if(wallReq.ptSegDist(prevPos) > epsilon) {
+//				realMove.madeWall = false;
+//				message = "Wall not built as it was not at hunter position";
+//			}
 			else{
 				boolean outOfBounds = false;
 				double[] coords = new double[4];
