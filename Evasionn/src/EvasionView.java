@@ -16,9 +16,12 @@ import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import java.applet.*;
+import java.awt.*;
+import javax.swing.*;
 
 
-public class EvasionView implements EvasionListener {
+public class EvasionView extends JApplet implements EvasionListener {
   Object lock = new Object();
   class GPanel extends JPanel {
     /**
@@ -56,12 +59,11 @@ public class EvasionView implements EvasionListener {
       g2d.draw(new Line2D.Float(hunterPosition,hunterPosition));
     }
   }
-  final EvasionModel model;
+  final EvasionModel model = null;
   String name;
   long move_counter;
   long time_counter;
-  final int N;
-  final int W;
+
   int moves_to_next_wall;
   Point2D preyPosition;
   Point2D hunterPosition;
@@ -72,12 +74,76 @@ public class EvasionView implements EvasionListener {
   GPanel mainPanel;
   JTextArea gameDescription;
   JButton hunterButton;
-  Graphics2D graphics;
 
-  public EvasionView(EvasionModel model, int N, int W) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
-    this.model = model;
-    this.N = N;
-    this.W = W;
+  /* attributes needed by the game */
+  final static int HUMAN = 0;
+  final static int COMPUTER = 1;
+  final int N;
+  final int W;
+  int hunter;
+  int prey;
+
+  String hunterName;
+  String preyName;
+  
+  /* GUI components */
+  JLable displayerString;
+  JLabel hunterLabel;
+  JLabel preyLabel;
+
+  String nstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
+  JComboBox NList = new JComboBox(nstrings);
+  NList.setSelectedIndex(1);
+  NList.addActionListener(new ActionListener {
+    public void actionPerformed(ActionEvent e) {
+          JComboBox cb = (JComboBox)e.getSource();
+          String str = (String)cb.getSelectedItem();
+          N = Integer.parseInt(str);
+      }
+  }
+  );
+
+  String wstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
+  JComboBox WList = new JComboBox(wstrings);
+  WList.setSelectedIndex(1);
+  WList.addActionListener(new ActionListener {
+    public void actionPerformed(ActionEvent e) {
+          JComboBox cb = (JComboBox)e.getSource();
+          String str = (String)cb.getSelectedItem();
+          W = Integer.parseInt(str);
+      }
+  }
+  );
+ 
+  ButtonGroup hunterBG = new ButtonGroup();
+  JRadioButton hunterComputer = new JRatioButton("Computer");
+  JRadioButton hunterHuman = new JRatioButton("Human");
+  hunterBG.add(hunterComputer);
+  hunterBG.add(hunterHuman);
+  hunterComputer.setSelected(true);
+  
+  ButtonGroup preyBG = new ButtonGroup();
+  JRadioButton preyComputer = new JRatioButton("Computer");
+  JRadioButton preyHuman = new JRatioButton("Human");
+  preyBG.add(preyComputer);
+  preyBG.add(preyHuman);
+  preyComputer.setSelected(true);
+
+  JButton startButton = new JButton("Start");
+  JButton resetButton = new JButton("Reset");
+
+  public void init() {
+    Container container = getContentPane();
+    container.setBackground(Color.white);
+    container.setLayout(new FlowLayout());
+    if (this.model == null) {
+      this.model = EvasionModel(N, W);
+      this.model.register(this, 'v');
+    }
+    this._init_container(container);
+  }
+
+  public void _init_container(Container frameContainer) {
     preyPosition = new Point(330,200);
     hunterPosition = new Point(0, 0);
     moves_to_next_wall = N;
@@ -87,16 +153,22 @@ public class EvasionView implements EvasionListener {
     walls = new ArrayList<Line2D>();
 
     UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-    frame = new JFrame("Evasion");
     gameDescription = new JTextArea();
     mainPanel = new GPanel();
     mainPanel.setSize(500, 500);
     mainPanel.setBackground(Color.WHITE);
     //    mainPanel.setBorder(BorderFactory.createLineBorder(Color.black, 1));
     mainPanel.setVisible(true);
-    Container frameContainer = frame.getContentPane();
     frameContainer.add(mainPanel,BorderLayout.CENTER);
     frameContainer.add(gameDescription,BorderLayout.NORTH);
+  }
+  /*
+  public EvasionView(EvasionModel model, int N, int W) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
+    this.model = model;
+    this.N = N;
+    this.W = W;
+    frame = new JFrame("Evasion");
+    Container frameContainer = frame.getContentPane();
     frame.setSize(510, 540);
     frame.setMaximumSize(new Dimension(520, 520));
     frame.setLocation(200, 200);
@@ -105,8 +177,10 @@ public class EvasionView implements EvasionListener {
     frame.setResizable(false);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setVisible(true);
+    this._init_container(frameContainer);
   }
 
+  */
   @Override
   public void hunter_moved(HunterMove move, final String message) {
     move_counter++;

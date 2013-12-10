@@ -67,6 +67,7 @@ void * matrixmult_mid(void* a) {
   fprintf(stderr, "The running time of middle, thread is %f\n", 1.0 * ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec) ) / 1000000);
   return NULL;
 }
+
 typedef void * (*func) (void*a);
 int main(int argc, char** argv) {
   int order[4];
