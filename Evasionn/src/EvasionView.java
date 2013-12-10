@@ -29,8 +29,15 @@ public class EvasionView extends JApplet implements EvasionListener {
      */
     private static final long serialVersionUID = 4626419896777520312L;
     Graphics2D g2d;
-    public GPanel() {
-      setPreferredSize(new Dimension(500, 500));
+    int height, width;
+    public GPanel(int height, int width) {
+      this.height = height;
+      this.width = width;
+      setPreferredSize(new Dimension(this.height, this.widht));
+    }
+
+    public void GPanel() {
+      this(400, 400);
     }
 
     @Override
@@ -38,7 +45,7 @@ public class EvasionView extends JApplet implements EvasionListener {
       super.paintComponent(g);
       g2d = (Graphics2D)g;
       g2d.setBackground(Color.WHITE);
-      g2d.clearRect(0, 0, 500, 500);
+      g2d.clearRect(0, 0, this.height, this.width);
       g2d.setColor(Color.GREEN);
       g2d.setStroke(new BasicStroke(1f));
       synchronized (lock) {
@@ -47,16 +54,20 @@ public class EvasionView extends JApplet implements EvasionListener {
         }
       }
       g2d.setColor(Color.BLACK);
-      g2d.draw(new Line2D.Float(0,500,500,500));
-      g2d.draw(new Line2D.Float(0,0, 500, 0));
-      g2d.draw(new Line2D.Float(0,0,0, 500));
-      g2d.draw(new Line2D.Float(500, 0, 500, 500));
-      g2d.setColor(Color.BLUE);
-      g2d.setStroke(new BasicStroke(3f,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g2d.draw(new Line2D.Float(preyPosition,preyPosition));
-      g2d.setColor(Color.RED);
-      g2d.setStroke(new BasicStroke(5f));
-      g2d.draw(new Line2D.Float(hunterPosition,hunterPosition));
+      g2d.draw(new Line2D.Float(0,this.width,this.height,this.width));
+      g2d.draw(new Line2D.Float(0,0, this.height, 0));
+      g2d.draw(new Line2D.Float(0,0,0, this.width));
+      g2d.draw(new Line2D.Float(this.width, 0, this.height, this.width));
+      if (prePosition != null) {
+        g2d.setColor(Color.BLUE);
+        g2d.setStroke(new BasicStroke(3f,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2d.draw(new Line2D.Float(preyPosition,preyPosition));
+      }
+      if (hunterPosition != null) {
+        g2d.setColor(Color.RED);
+        g2d.setStroke(new BasicStroke(5f));
+        g2d.draw(new Line2D.Float(hunterPosition,hunterPosition));
+      }
     }
   }
   final EvasionModel model = null;
@@ -69,7 +80,6 @@ public class EvasionView extends JApplet implements EvasionListener {
   Point2D hunterPosition;
   HunterMoves hunterDirection;
   ArrayList<Line2D> walls;
-  String displayString;
   JFrame frame;
   GPanel mainPanel;
   JTextArea gameDescription;
@@ -78,20 +88,20 @@ public class EvasionView extends JApplet implements EvasionListener {
   /* attributes needed by the game */
   final static int HUMAN = 0;
   final static int COMPUTER = 1;
-  final int N;
-  final int W;
-  int hunter;
-  int prey;
+  final int N = 3;
+  final int W = 3;
+  int hunter = COMPUTER;
+  int prey = COMPUTER;
 
   String hunterName;
   String preyName;
   
   /* GUI components */
-  JLable displayerString;
-  JLabel hunterLabel;
-  JLabel preyLabel;
+  JLabel displayerString = new JLabel("DisplayLabel");
+  JLabel hunterLabel = new JLabel("HunterLabel");
+  JLabel preyLabel = new JLabel("PreyLabel");
 
-  String nstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
+  String[] nstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox NList = new JComboBox(nstrings);
   NList.setSelectedIndex(1);
   NList.addActionListener(new ActionListener {
@@ -115,12 +125,36 @@ public class EvasionView extends JApplet implements EvasionListener {
   }
   );
  
+  class RadioActionListener implements ActionListener {
+    int id = 0;
+    publid RadioActionListener(int id) {
+      this.id = id;
+    }
+    public void actionPerformed(ActoinEvent e) {
+      if(this.id == 0) {// hunter
+        if ("Computer".equals(e.getActionCommand())) {
+          hunter = COMPUTER;
+        }else {
+          hunter = HUMAN;
+        }
+      }
+      else {
+        if ("Computer".equals(e.getActionCommand())) {
+          prey = COMPUTER;
+        }else {
+          prey = HUMAN;
+        }
+      }
+    }
+  }
   ButtonGroup hunterBG = new ButtonGroup();
   JRadioButton hunterComputer = new JRatioButton("Computer");
   JRadioButton hunterHuman = new JRatioButton("Human");
   hunterBG.add(hunterComputer);
   hunterBG.add(hunterHuman);
   hunterComputer.setSelected(true);
+  hunterComputer.addActionListener(new RadioActionListener(0));
+  hunterHuman.addActionListener(new RadioActionListener(0));
   
   ButtonGroup preyBG = new ButtonGroup();
   JRadioButton preyComputer = new JRatioButton("Computer");
@@ -128,19 +162,45 @@ public class EvasionView extends JApplet implements EvasionListener {
   preyBG.add(preyComputer);
   preyBG.add(preyHuman);
   preyComputer.setSelected(true);
+  preyComputer.addActionListener(new RadioActionListener(1));
+  preyHuman.addActionListener(new RadioActionListener(1));
 
   JButton startButton = new JButton("Start");
   JButton resetButton = new JButton("Reset");
 
+  resetButton.addActionListener( new ActionLister() {
+      public void actionPerformed(ActionEvent e) {
+          walls = ArrayList<Line2D>();
+          hunter = COMPUTER;
+          prey = COMPUTER;
+          N = 3;
+          W = 3;
+      }
+    }
+  });
+
   public void init() {
     Container container = getContentPane();
-    container.setBackground(Color.white);
-    container.setLayout(new FlowLayout());
-    if (this.model == null) {
-      this.model = EvasionModel(N, W);
-      this.model.register(this, 'v');
-    }
-    this._init_container(container);
+    container.setBackground(Color.WHITE);
+    container.setLayout(new BorderLayout());
+    container.add(displayString, BorderLayout.PAGE_START);
+    
+    JPanel gamePanel = new JPanel();
+    container.add(gamePanel, BorderLayout.CENTER);
+    
+    gamePanel.setLayout(new FlowLayout());
+    gamePanel.add(mainPanel);
+    JPanel controlPanel = new JPanel();
+    gamePanel.add(controlPanel);
+    controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+    controlPanel.add(NList);
+    controlPanel.add(WList);
+    controlPanel.add(hunterLabel);
+    controlPanel.add(hunterBG);
+    controlPanel.add(preyLabel);
+    controlPanel.add(preyBG);
+    controlPanel.add(startButton);
+    controlPanel.add(resetButton);
   }
 
   public void _init_container(Container frameContainer) {
