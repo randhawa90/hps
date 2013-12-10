@@ -27,7 +27,7 @@ import java.awt.*;
 import javax.swing.*;
 
 
-public class EvasionView extends JApplet{
+public class EvasionView extends JApplet implements EvasionListener{
   Object lock = new Object();
   class GPanel extends JPanel {
     /**
@@ -323,7 +323,7 @@ public class EvasionView extends JApplet{
       @Override
       protected Integer doInBackground() throws Exception {
         frame.getContentPane().validate();frame.getContentPane().repaint();
-        gameDescription.setText(displayString + move_counter + message);
+        gameDescription.setText(displayString.getText() + move_counter + message);
         return 0;
       }
     }.execute();
@@ -343,7 +343,7 @@ public class EvasionView extends JApplet{
 
   @Override
   public void prey_caught(long no_of_moves) {
-    gameDescription.setText(displayString + ++move_counter + "Hunter Won!!!");
+    gameDescription.setText(displayString.getText() + ++move_counter + "Hunter Won!!!");
   }
 
   @Override
