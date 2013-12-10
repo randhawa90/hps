@@ -36,7 +36,7 @@ public class EvasionView extends JApplet implements EvasionListener {
       setPreferredSize(new Dimension(this.height, this.widht));
     }
 
-    public void GPanel() {
+    public GPanel() {
       this(400, 400);
     }
 
@@ -79,9 +79,9 @@ public class EvasionView extends JApplet implements EvasionListener {
   Point2D preyPosition;
   Point2D hunterPosition;
   HunterMoves hunterDirection;
-  ArrayList<Line2D> walls;
+  ArrayList<Line2D> walls = new ArrayList<Line2D>();
   JFrame frame;
-  GPanel mainPanel;
+  GPanel mainPanel = new GPanel();
   JTextArea gameDescription;
   JButton hunterButton;
 
@@ -97,13 +97,13 @@ public class EvasionView extends JApplet implements EvasionListener {
   String preyName;
   
   /* GUI components */
-  JLabel displayerString = new JLabel("DisplayLabel");
+  JLabel displayString = new JLabel("DisplayLabel");
   JLabel hunterLabel = new JLabel("HunterLabel");
   JLabel preyLabel = new JLabel("PreyLabel");
 
   String[] nstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox NList = new JComboBox(nstrings);
-  NList.setSelectedIndex(1);
+  NList.setSelectedIndex(0);
   NList.addActionListener(new ActionListener {
     public void actionPerformed(ActionEvent e) {
           JComboBox cb = (JComboBox)e.getSource();
@@ -113,7 +113,7 @@ public class EvasionView extends JApplet implements EvasionListener {
   }
   );
 
-  String wstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
+  String[] wstrings = {"3", "4", "5", "6", "7", "8", "9", "10"};
   JComboBox WList = new JComboBox(wstrings);
   WList.setSelectedIndex(1);
   WList.addActionListener(new ActionListener {
